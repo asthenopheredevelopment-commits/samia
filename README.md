@@ -11,11 +11,6 @@ sessions using a tiered architecture modeled on biological consolidation.
 Single-operator production use. The system runs daily on one workstation and
 has not been tested in multi-user or production-scale deployments.
 
-**Benchmarking:** no first-party benchmark numbers ship with this
-release. The system was developed against LoCoMo-style long-term-memory
-workloads; we invite independent benchmarking — the retrieval entry points
-(`chainogram_retrieve`, `semantic_recall.recall`) are stable seams to
-harness against.
 
 ---
 
