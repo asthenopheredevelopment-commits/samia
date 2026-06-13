@@ -16,6 +16,10 @@
 #   SAMIA_SERVICE=0                      1 = install+enable the maintenanced service
 #   SAMIA_WITH_CLAUDE=0                  1 = also install Claude Code (needed to USE SAM/IA)
 #   SAMIA_UPGRADE=0                      1 = reinstall/upgrade samia even if already present
+#   SAMIA_CUDA=0                         1 = rebuild llama-cpp-python with CUDA (GPU inference;
+#                                            needs the CUDA toolkit / nvcc — CPU works without)
+#   SAMIA_ENABLE_ARMS=0                  1 = turn on the semantic arm + fact extraction in the
+#                                            systemd service (default off; needs SAMIA_SERVICE=1)
 #   SAMIA_SRC=<pip spec>                 override source (default: this clone, else GitHub)
 #
 # IDEMPOTENT: every step checks first and does only what's missing. Re-running on
@@ -28,6 +32,8 @@ MEMDIR="${ASTHENOS_MEMORY_DIR:-$HOME/.local/share/samia/memory}"
 WITH_LLM="${SAMIA_WITH_LLM:-1}"
 WITH_SERVICE="${SAMIA_SERVICE:-0}"
 WITH_CLAUDE="${SAMIA_WITH_CLAUDE:-0}"
+WITH_CUDA="${SAMIA_CUDA:-0}"
+ENABLE_ARMS="${SAMIA_ENABLE_ARMS:-0}"
 SRC="${SAMIA_SRC:-}"
 REPO="https://github.com/asthenopheredevelopment-commits/samia.git"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
@@ -79,6 +85,20 @@ else
 fi
 "$VENV/bin/python" -c 'import samia, samia.core.semantic_recall; print("   samia ready:", samia.__file__)'
 
+# ---- 3b. optional: GPU build of llama-cpp-python ----------------------------
+# Default install is CPU-only (portable). With a matching CUDA toolkit present,
+# rebuild llama-cpp with GPU offload — much faster local-LLM (judge/extract/synth).
+if [ "$WITH_CUDA" = "1" ]; then
+  if command -v nvcc >/dev/null 2>&1; then
+    say "Rebuilding llama-cpp-python with CUDA (GPU inference)"
+    retry env CMAKE_ARGS="-DGGML_CUDA=on" "$VENV/bin/pip" install \
+        --force-reinstall --no-cache-dir llama-cpp-python \
+      || warn "CUDA build of llama-cpp-python failed (stays on the CPU build)"
+  else
+    warn "SAMIA_CUDA=1 but nvcc not found — install the CUDA toolkit, then re-run"
+  fi
+fi
+
 # ---- 4. memory dir ----------------------------------------------------------
 mkdir -p "$MEMDIR"
 
@@ -86,16 +106,20 @@ mkdir -p "$MEMDIR"
 if [ "$WITH_SERVICE" = "1" ]; then
   say "Installing the maintenanced systemd user service"
   mkdir -p "$HOME/.config/systemd/user"
-  cat > "$HOME/.config/systemd/user/samia-maintenanced.service" <<UNIT
-[Unit]
-Description=SAM/IA memory maintenance daemon
-[Service]
-ExecStart=$VENV/bin/python -m samia.runtime.maintenanced
-Restart=on-failure
-Environment=ASTHENOS_MEMORY_DIR=$MEMDIR
-[Install]
-WantedBy=default.target
-UNIT
+  {
+    echo "[Unit]"
+    echo "Description=SAM/IA memory maintenance daemon"
+    echo "[Service]"
+    echo "ExecStart=$VENV/bin/python -m samia.runtime.maintenanced"
+    echo "Restart=on-failure"
+    echo "Environment=ASTHENOS_MEMORY_DIR=$MEMDIR"
+    if [ "$ENABLE_ARMS" = "1" ]; then       # opt-in: dual-process recall + atoms
+      echo "Environment=ASTHENOS_SEMANTIC_ARM_ENABLED=1"
+      echo "Environment=ASTHENOS_FACT_EXTRACT_ENABLED=1"
+    fi
+    echo "[Install]"
+    echo "WantedBy=default.target"
+  } > "$HOME/.config/systemd/user/samia-maintenanced.service"
   loginctl enable-linger "$USER" 2>/dev/null || warn "enable-linger failed (service runs only while logged in)"
   systemctl --user daemon-reload 2>/dev/null || true
   systemctl --user enable --now samia-maintenanced 2>/dev/null || warn "could not start service (no user systemd?)"
