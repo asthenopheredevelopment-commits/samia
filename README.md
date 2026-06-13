@@ -235,11 +235,19 @@ synthesis run far faster):
 SAMIA_CUDA=1 bash install.sh        # rebuilds llama-cpp-python with CUDA
 ```
 
+This builds llama-cpp-python against **your own** CUDA toolkit — install it from
+your distro or NVIDIA to match your driver (SAM/IA does **not** bundle it; no
+project ships the multi-GB proprietary toolkit). `install.sh` checks for `nvcc`
+and skips the GPU build with a note if it's absent. Prefer not to compile?
+llama-cpp-python publishes prebuilt CUDA wheels for common CUDA versions (no
+toolkit needed) — though very new GPUs (Blackwell) may need the source build
+until those wheels catch up.
+
 GPU is **additive**: a CUDA build uses the GPU when one is present and falls
 back to CPU automatically when it isn't (no GPU, VRAM exhaustion, driver
 mismatch). Tune with `ASTHENOS_N_GPU_LAYERS` (`0` forces CPU; a positive N does
 partial offload for limited VRAM). Verified on an RTX 5070 (CUDA 12.8 — Qwen3-4B
-at ~128 tok/s vs ~6 tok/s on CPU, ~20×); other GPUs are expected to work but are
+at ~150 tok/s vs ~6 tok/s on CPU, ~25×); other GPUs are expected to work but are
 not yet tested.
 
 ---

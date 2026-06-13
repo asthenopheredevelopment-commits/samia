@@ -91,8 +91,11 @@ fi
 if [ "$WITH_CUDA" = "1" ]; then
   if command -v nvcc >/dev/null 2>&1; then
     say "Rebuilding llama-cpp-python with CUDA (GPU inference)"
-    retry env CMAKE_ARGS="-DGGML_CUDA=on" "$VENV/bin/pip" install \
-        --force-reinstall --no-cache-dir llama-cpp-python \
+    # -DCMAKE_CUDA_ARCHITECTURES=native targets THIS box's GPU — required for
+    # newer cards (e.g. Blackwell/sm_120 on an RTX 50-series); without it the
+    # build can omit your arch and silently run on CPU. Verified on RTX 5070.
+    retry env CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=native" \
+        "$VENV/bin/pip" install --force-reinstall --no-cache-dir llama-cpp-python \
       || warn "CUDA build of llama-cpp-python failed (stays on the CPU build)"
   else
     warn "SAMIA_CUDA=1 but nvcc not found — install the CUDA toolkit, then re-run"
