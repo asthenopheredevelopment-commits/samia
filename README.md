@@ -323,12 +323,6 @@ agent harnesses; wire it to any stdio MCP wrapper.
 - **No cloud credentials.** API keys for optional cloud provider arms are not
   included and are never committed to the repository (verified: GATE1 scan,
   zero hard-coded secrets).
-- **No Atoms UI.** The Topology Atlas 3D visualization and the Atoms control
-  panel (Slint desktop app) are not part of this package.
-- **The `runtime/` modules outside the memory core** — skills, preplanner,
-  evolution engine, orchestrator, perception, voice I/O — are present in the
-  source tree but are parts of a larger personal assistant system. Their
-  configuration, dependencies, and integration points are not documented here.
 
 ---
 
@@ -355,9 +349,7 @@ agent harnesses; wire it to any stdio MCP wrapper.
 **PolyForm Noncommercial 1.0.0** (source-available). Free for personal,
 research, educational, and any noncommercial use — experiment freely.
 **Commercial use requires a paid license from the author** (see NOTICE).
-This is deliberately not an OSI "open source" license: the trade is full
-source transparency and free noncommercial use, with commercial users
-supporting the project's development.
+This is deliberately not an OSI "open source" license.
 
 ## Platform support
 
