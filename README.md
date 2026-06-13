@@ -224,6 +224,24 @@ What it does — and only where absent: apt-installs `python3-venv`, `python3-pi
 from source, so a compiler is required), `curl`, `git`; creates the venv;
 `pip install`s `samia[llm]`; makes the memory directory.
 
+### GPU acceleration (optional, experimental)
+
+SAM/IA **never requires a GPU** — the default build is CPU-only and runs
+everywhere. With an NVIDIA GPU and a matching CUDA toolkit you can rebuild the
+local-LLM backend for GPU offload (the REM-time judge / fact-extraction /
+synthesis run far faster):
+
+```sh
+SAMIA_CUDA=1 bash install.sh        # rebuilds llama-cpp-python with CUDA
+```
+
+GPU is **additive**: a CUDA build uses the GPU when one is present and falls
+back to CPU automatically when it isn't (no GPU, VRAM exhaustion, driver
+mismatch). Tune with `ASTHENOS_N_GPU_LAYERS` (`0` forces CPU; a positive N does
+partial offload for limited VRAM). Verified on an RTX 5070 (CUDA 12.8 — Qwen3-4B
+at ~128 tok/s vs ~6 tok/s on CPU, ~20×); other GPUs are expected to work but are
+not yet tested.
+
 ---
 
 ## Quickstart (the manual steps install.sh automates)

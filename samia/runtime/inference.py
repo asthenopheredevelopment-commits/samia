@@ -219,20 +219,37 @@ class LlamaCppBackend:
             self._load_error_ts = time.monotonic()
             raise ImportError(self._load_error) from exc
 
-        try:
+        def _load(ngl: int) -> Any:
             kwargs: dict[str, Any] = {
                 "model_path": self._model_path,
                 "n_ctx": self._n_ctx,
-                "n_gpu_layers": self._n_gpu_layers,
+                "n_gpu_layers": ngl,
                 "verbose": False,
             }
             if self._chat_format is not None:
                 kwargs["chat_format"] = self._chat_format
-            self._llm = llama_cpp.Llama(**kwargs)
+            return llama_cpp.Llama(**kwargs)
+
+        try:
+            self._llm = _load(self._n_gpu_layers)
         except Exception as exc:
-            self._load_error = f"Llama() init failed: {exc}"
-            self._load_error_ts = time.monotonic()
-            raise RuntimeError(self._load_error) from exc
+            # GPU ADDITIVE, CPU FALLBACK: SAM/IA never REQUIRES a GPU. If an
+            # offloaded load fails (CUDA build on a box with no GPU, VRAM OOM, a
+            # driver/toolkit mismatch), retry once on pure CPU before giving up.
+            if self._n_gpu_layers != 0:
+                _log.warning("GPU load failed (%s) — falling back to CPU "
+                             "(n_gpu_layers=0)", exc)
+                try:
+                    self._llm = _load(0)
+                    self._n_gpu_layers = 0
+                except Exception as exc2:
+                    self._load_error = f"Llama() init failed (GPU and CPU): {exc2}"
+                    self._load_error_ts = time.monotonic()
+                    raise RuntimeError(self._load_error) from exc2
+            else:
+                self._load_error = f"Llama() init failed: {exc}"
+                self._load_error_ts = time.monotonic()
+                raise RuntimeError(self._load_error) from exc
 
         _log.info("llama_cpp model loaded: %s (ctx=%d, gpu_layers=%d)",
                   self._model_path, self._n_ctx, self._n_gpu_layers)
@@ -366,11 +383,25 @@ _backend_registry: dict[str, "InferenceBackend"] = {}
 _model_backend_cache: dict[str, "LlamaCppBackend"] = {}
 
 
+def _default_n_gpu_layers() -> int:
+    """GPU layers to offload, default -1 (all). GPU is ADDITIVE: -1 is harmless on
+    a CPU-only llama-cpp build (ignored -> runs CPU) and uses the GPU on a CUDA
+    build when one is present. Override with ASTHENOS_N_GPU_LAYERS: 0 forces CPU
+    even on a GPU build; a positive N does partial offload for limited VRAM."""
+    v = os.environ.get("ASTHENOS_N_GPU_LAYERS", "").strip()
+    if v:
+        try:
+            return int(v)
+        except ValueError:
+            _log.warning("ignoring non-int ASTHENOS_N_GPU_LAYERS=%r", v)
+    return -1
+
+
 def get_backend_for_model(
     model_path: str,
     *,
     n_ctx: int = 4096,
-    n_gpu_layers: int = -1,
+    n_gpu_layers: int | None = None,
     chat_format: str | None = None,
 ) -> "InferenceBackend":
     """Return the ONE cached LlamaCppBackend for *model_path* (load-once).
@@ -414,6 +445,8 @@ def get_backend_for_model(
         _log.warning("inference: model path %s is not a .gguf file, using MockBackend",
                      model_path)
         return MockBackend()
+    if n_gpu_layers is None:
+        n_gpu_layers = _default_n_gpu_layers()
     key = str(p.resolve())
     cached = _model_backend_cache.get(key)
     if cached is not None:
