@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "samia"
+version = "1.0.0"
+description = "SAM/IA - biologically-inspired persistent memory: tiered storage, dual-process recall (episodic chainograms + semantic atoms), fact extraction at consolidation, contradiction detection with restorable supersession, REM-cycle offline consolidation, content-integrity decay/repair."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["memory", "llm", "agent-memory", "retrieval", "consolidation"]
+
+dependencies = [
+    "numpy>=1.24",
+    "sentence-transformers>=2.2",   # pulls torch + transformers (the embedder)
+]
+
+[project.optional-dependencies]
+llm = ["llama-cpp-python>=0.3"]     # local gguf arms: judge, fact extraction, synthesis
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["samia*"]

@@ -1,0 +1,14 @@
+SAM/IA — Shallow Abyss Manifest / Infinite Abyss Compression
+Copyright (c) 2026 the SAM/IA author
+
+Licensed under the PolyForm Noncommercial License 1.0.0 (see LICENSE).
+Free for personal, research, educational, and any other noncommercial use.
+
+COMMERCIAL USE: any use for commercial advantage or monetary compensation
+requires a separate commercial license from the author. Contact via the
+repository's issue tracker or listed contact to arrange terms.
+
+MODELS: this software ships NO model weights. At first use it can download
+models the user selects (default: Qwen3-4B-Instruct, Apache-2.0, from
+Hugging Face) to the user's own machine, printing the model's license
+before download. Model licenses are independent of this software's license.

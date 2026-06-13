@@ -1,0 +1,10 @@
+# build artifacts (pip from-source installs regenerate these)
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# internal release tooling — not part of the public package
+gates/
+port_samia.sh
