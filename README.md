@@ -200,10 +200,36 @@ cache miss.
 
 ---
 
-## Quickstart
+## Install
+
+One command — installs the OS prerequisites, a venv, and SAM/IA, doing only
+what's missing. **Idempotent**: re-running on a box that's already set up (or
+half set up) is a fast no-op, not a rebuild.
 
 ```sh
-sudo apt install -y python3-venv python3-pip     # stock-desktop prerequisite
+bash install.sh                  # from a clone
+```
+
+Options (environment variables):
+
+- `SAMIA_WITH_CLAUDE=1` — also install Claude Code (needed to *use* SAM/IA in the
+  current version)
+- `SAMIA_SERVICE=1` — install + enable the maintenance daemon as a systemd user
+  service (`maintenanced`)
+- `SAMIA_UPGRADE=1` — reinstall/upgrade an existing install
+- `SAMIA_VENV=…` / `ASTHENOS_MEMORY_DIR=…` — relocate the venv / memory store
+
+What it does — and only where absent: apt-installs `python3-venv`, `python3-pip`,
+`python3-dev`, **`build-essential`** (the `[llm]` arm compiles `llama-cpp-python`
+from source, so a compiler is required), `curl`, `git`; creates the venv;
+`pip install`s `samia[llm]`; makes the memory directory.
+
+---
+
+## Quickstart (the manual steps install.sh automates)
+
+```sh
+sudo apt install -y python3-venv python3-pip python3-dev build-essential curl git
 python3 -m venv ~/samia_venv && source ~/samia_venv/bin/activate
 pip install '/path/to/samia[llm,test]'           # or plain: pip install /path/to/samia
 
