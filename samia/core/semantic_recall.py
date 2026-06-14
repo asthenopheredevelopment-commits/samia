@@ -702,8 +702,16 @@ def recall(memory_dir: Path, query: str, budget_tokens: int = 8000) -> dict:
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.core.semantic_recall
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-10-memory-semantic-recall-arm-v01 (P1 + P2b/P2c)
 # Layer:      core (pure library, no daemon dependency)
+# Role:       the SEMANTIC recall arm + read-side composer -- a peer vector top-k over
+#             type:semantic atoms (with an entity-bridge reserve) served as KNOWN FACTS
+#             BESIDE the episodic chainogram's CONVERSATION EVIDENCE, plus a record-only
+#             read-conflict supersession scan; flag-OFF is a byte-identical chainogram
+#             passthrough.
 # Stability:  v1.2 -- semantic arm + composer, flag-gated (default OFF)
 #             + TUNE-2026-06-11 focuser defaults: focus_k 6->8, evidence_cap
 #               1800->2400 (benchmark-validated K=8/cap2400 = 0.45 overall @ 1,944
@@ -734,5 +742,5 @@ def recall(memory_dir: Path, query: str, budget_tokens: int = 8000) -> dict:
 #             recall() == chainogram passthrough and context_extension never resolves
 #             an atom-chain type. The entity-bridge reserve and read-conflict scan only
 #             run on the flag-ON path.
-# Lines:      ~560
+# Lines:      743
 # --------------------------------------------------------------------------

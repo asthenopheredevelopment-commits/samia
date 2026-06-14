@@ -1,41 +1,40 @@
 """samia.core.chain — edge-level temporal intervals for SAM chains.
 
-Carved from memory_chain_temporal.py. Per design doc §1.1, the chain module
-exposes the bi-temporal *edge* layer: every edge in a chain manifest carries
-its own [valid_from, valid_to] interval, and traversals at a point in time
-only follow edges whose interval contains that timestamp.
+Layer 1 (Owns / Depends):
+    Owns:    load_chain, save_chain, list_chains — chain-manifest I/O.
+             member_node_path, member_addrs, node_valid_from — member resolution.
+             add_edge, invalidate_edge, set_edge, strip_member — edge/membership ops.
+             edge_valid_at — the point-in-time edge predicate.
+             migrate_linear_edges — backfill linear follows-edges on edgeless chains.
+             show_chain, query_at, traverse_at, snapshot_at — time-anchored queries.
+             ChainNotFound — the missing-manifest exception (a FileNotFoundError).
+    Depends: stdlib only (datetime, json, collections, pathlib, typing).
+             samia.core.temporal (read_node/parse_date/fm_get) via the lazy _tq()
+             helper. samia.runtime.memory_guard.stage_write (lazy, observation-only,
+             fail-open) inside the mutating ops.
+Layer 2 (What / Why):
+    What: a chain manifest (chains/<chain>.json) holds members[] plus an edges[]
+          list; every edge carries its own {from, to, valid_from, valid_to, label,
+          confidence} interval. The edge ops add/close/modify those intervals;
+          edge_valid_at tests whether an edge's [vf, vt] contains a date; and the
+          queries (query_at / traverse_at / snapshot_at) only follow edges valid AT
+          a given point in time. migrate_linear_edges seeds follows-edges between
+          consecutive members for legacy edgeless chains.
+    Why:  this is the bi-temporal EDGE layer (design doc §1.1) — node validity says
+          when a FACT held, edge validity says when a RELATIONSHIP held, so a graph
+          traversal can reconstruct the chain "as of" any date (e.g. which node
+          superseded which, when). null valid_to means "still valid" (an open
+          interval), which is why the predicates treat a falsy/`"null"` bound as
+          open. The library plane returns plain dicts / prints so a CLI and the MCP
+          server share one query semantics. The memory_guard staging is
+          observation-only (default-pass) and fail-open: it can log but never block
+          or break a chain write.
 
-Edge schema (lives in chains/<chain>.json):
-
-    {
-      "edges": [
-        {
-          "from":       "<member-addr>",
-          "to":         "<member-addr>",
-          "valid_from": "YYYY-MM-DD" | null,
-          "valid_to":   "YYYY-MM-DD" | null,   # null = still valid
-          "label":      "supersedes" | "depends_on" | "follows" | ...,
-          "confidence": 0.0–1.0
-        }
-      ]
-    }
-
-Public API:
-  load_chain, save_chain, list_chains      — manifest I/O
-  member_node_path, member_addrs           — member resolution
-  node_valid_from                          — read node's valid_from
-  add_edge, invalidate_edge, set_edge      — edge ops
-  edge_valid_at                            — point-in-time predicate
-  migrate_linear_edges                     — backfill linear edges
-  show_chain, query_at, traverse_at,
-    snapshot_at                            — queries
-
-Note: chain.py depends on memory_temporal_query for read_node/parse_date/fm_get.
-That helper module will eventually carve into `samia.core.temporal`; for now
-the import is preserved.
-
-Acceptance: byte-identical to pre-refactor memory_chain_temporal.py CLI output
-on the same memory tree (design doc §8.1).
+Layer 3 (Changelog):
+    (carved from memory_chain_temporal.py — library plane extraction; acceptance:
+     byte-identical to pre-refactor CLI output, design doc §8.1. GATE6 rerouted the
+     temporal-helper import off the tools/-dir shim onto samia.core.temporal.
+     AUD48 Phase 1 added the observation-only memory_guard staging in the mutators.)
 """
 
 from __future__ import annotations
@@ -104,6 +103,8 @@ def list_chains(chains_dir: Path) -> list[str]:
     return sorted(p.stem for p in chains_dir.glob("*.json"))
 
 
+# member_node_path — What: resolve a member's addr to its on-disk node Path, honoring
+#     both "nodes/"-prefixed and bare filenames and supplying a ".md" suffix if absent.
 def member_node_path(memory_dir: Path, chain: dict, addr: str) -> Optional[Path]:
     nodes_dir = memory_dir / "nodes"
     for m in chain.get("members") or []:
@@ -117,6 +118,9 @@ def member_node_path(memory_dir: Path, chain: dict, addr: str) -> Optional[Path]
                 p = p.with_suffix(".md")
             return p
     return None
+# member_node_path — Why: member `file` fields are stored inconsistently (some carry the
+#     "nodes/" prefix, some don't, some omit the extension), so this normalizes all three
+#     forms to one Path — returning None (not raising) for an addr that isn't a member.
 
 
 def member_addrs(chain: dict) -> list[str]:
@@ -140,6 +144,9 @@ def strip_member(chains_dir: Path, node: str) -> dict:
             data = load_chain(chains_dir, name)
         except (SystemExit, FileNotFoundError):
             continue
+        # DeadAddrSweep — What: in each chain, drop the dead node's members[] entry
+        #     (collecting its addr) and any edge touching that addr; only rewrite chains
+        #     that actually contained the node.
         members = data.get("members") or []
         dead_addrs: set[str] = set()
         kept_members = []
@@ -165,6 +172,10 @@ def strip_member(chains_dir: Path, node: str) -> dict:
     return {"chains_touched": chains_touched,
             "members_removed": members_removed,
             "edges_removed": edges_removed}
+# DeadAddrSweep — Why: a forgotten/merged/purged node must leave NO dangling membership
+#     or edge (a traversal hitting a vanished endpoint would dead-end), so the cascade
+#     removes both. Idempotent — a chain without the node is left byte-identical — so the
+#     forget cascade is safe to re-run.
 
 
 def node_valid_from(memory_dir: Path, chain: dict, addr: str) -> Optional[_dt.date]:
@@ -280,6 +291,7 @@ def set_edge(chains_dir: Path, chain_name: str, frm: str, to: str,
     return target
 
 
+# edge_valid_at — What: is date `at` inside edge e's [valid_from, valid_to] interval?
 def edge_valid_at(e: dict, at: _dt.date) -> bool:
     tq = _tq()
     vf = tq.parse_date(e.get("valid_from")) if e.get("valid_from") else None
@@ -289,6 +301,9 @@ def edge_valid_at(e: dict, at: _dt.date) -> bool:
     if vt and at > vt:
         return False
     return True
+# edge_valid_at — Why: an open end — missing valid_from, or valid_to that is None/"null"
+#     (still valid) — is treated as unbounded, so each bound only constrains when present;
+#     this is the gate every point-in-time query uses to decide which edges to follow.
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +311,9 @@ def edge_valid_at(e: dict, at: _dt.date) -> bool:
 # ---------------------------------------------------------------------------
 
 
+# migrate_linear_edges — What: for every chain with NO edges, synthesize a linear
+#     "follows" edge between each consecutive member pair (dating it from the later of the
+#     two nodes' valid_from); a <2-member chain just gets an empty edges[] list.
 def migrate_linear_edges(memory_dir: Path, dry_run: bool = False) -> dict:
     chains_dir = memory_dir / "chains"
     written: list[str] = []
@@ -327,6 +345,10 @@ def migrate_linear_edges(memory_dir: Path, dry_run: bool = False) -> dict:
         written.append(cname)
     print(f"[chain_temporal] {'would update' if dry_run else 'updated'} {len(written)} chains with edge intervals")
     return {"chains": written}
+# migrate_linear_edges — Why: legacy chains predate the edge layer, so point-in-time
+#     traversal needs SOME edge per adjacency to follow; skip-if-edges-present keeps it
+#     idempotent (never clobbers hand-authored edges). The edge is dated by max(vf_a, vf_b)
+#     because the relationship can't predate its later endpoint coming into existence.
 
 
 # ---------------------------------------------------------------------------
@@ -357,6 +379,8 @@ def show_chain(memory_dir: Path, name: str) -> None:
               f"   conf={e.get('confidence', 1.0)}")
 
 
+# query_at — What: return the members of a chain that are "live" at date `at` — those
+#     touched by an edge valid at `at`; an edgeless chain returns ALL members.
 def query_at(memory_dir: Path, chain_name: str, at: _dt.date) -> list[dict]:
     chains_dir = memory_dir / "chains"
     tq = _tq()
@@ -368,6 +392,8 @@ def query_at(memory_dir: Path, chain_name: str, at: _dt.date) -> list[dict]:
         reachable.add(e["to"])
     out = []
     for a in member_addrs(chain):
+        # EdgelessFallthrough — every member is kept when the chain has no edges at all
+        #     (nothing to time-filter on), otherwise only edge-reachable members survive.
         if a in reachable or not (chain.get("edges") or []):
             p = member_node_path(memory_dir, chain, a)
             title = a
@@ -379,12 +405,16 @@ def query_at(memory_dir: Path, chain_name: str, at: _dt.date) -> list[dict]:
     return out
 
 
+# traverse_at — What: breadth-first walk forward from `start` along edges valid at date
+#     `at`, up to `depth` hops, returning each reached member once with its hop distance.
 def traverse_at(memory_dir: Path, chain_name: str, start: str, at: _dt.date,
                 depth: int = 3) -> list[dict]:
     chains_dir = memory_dir / "chains"
     tq = _tq()
     chain = load_chain(chains_dir, chain_name)
     valid = [e for e in (chain.get("edges") or []) if edge_valid_at(e, at)]
+    # ForwardAdjacency — build a from->edges map over ONLY the time-valid edges so the
+    #     BFS naturally follows the graph as it stood at `at`.
     fwd: dict[str, list[dict]] = defaultdict(list)
     for e in valid:
         fwd[e["from"]].append(e)
@@ -424,3 +454,35 @@ def snapshot_at(memory_dir: Path, at: _dt.date) -> dict:
             "total_edge_count": len(chain.get("edges") or []),
         }
     return out
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.chain
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Carved from memory_chain_temporal.py (bi-temporal edge layer).
+#             + GATE6 (temporal-helper import rerouted to samia.core.temporal)
+#             + AUD48 Phase 1 (observation-only memory_guard staging in mutators)
+#             + FEAT-2026-06-07 P0 (strip_member forget cascade).
+# Layer:      core (library; shared by the CLI and the MCP server).
+# Role:       the bi-temporal EDGE layer for SAM chains — chain-manifest I/O + member
+#             resolution + add/close/modify edge-interval ops, the point-in-time
+#             edge_valid_at predicate, linear-edge backfill, and the time-anchored
+#             query/traverse/snapshot surface.
+# Stability:  stable -- edge-interval query primitives; API on memory_dir/chains_dir.
+# ErrorModel: load_chain raises ChainNotFound (a FileNotFoundError, so `except
+#             Exception` catches it — it no longer SystemExit-kills the host);
+#             add_edge raises SystemExit on a non-member endpoint (CLI contract);
+#             edge predicates treat a falsy / "null" bound as an OPEN interval end;
+#             strip_member is idempotent and skips chains not containing the node;
+#             memory_guard staging is fail-open (never blocks/breaks a write).
+# Depends:    datetime, json, collections, pathlib, typing (stdlib).
+#             samia.core.temporal (LAZY via _tq()).
+#             samia.runtime.memory_guard.stage_write (LAZY, observation-only).
+# Exposes:    load_chain, save_chain, list_chains, member_node_path, member_addrs,
+#             node_valid_from, strip_member, add_edge, invalidate_edge, set_edge,
+#             edge_valid_at, migrate_linear_edges, show_chain, query_at,
+#             traverse_at, snapshot_at, ChainNotFound.
+# Lines:      485
+# --------------------------------------------------------------------------

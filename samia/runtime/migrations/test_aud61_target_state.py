@@ -1,4 +1,4 @@
-"""Tests for samia.runtime.migrations.aud61_target_state -- target_state migration.
+"""samia.runtime.migrations.test_aud61_target_state — tests for the AUD61 target_state migration.
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for assign_target_state, validate_target_state,
@@ -205,14 +205,17 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.migrations.test_aud61_target_state
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD61
-# Layer:      test
-# Stability:  v1.0
-# ErrorModel: unittest assertions
-# Depends:    samia.runtime.migrations.aud61_target_state, samia.core.frontmatter,
-#             unittest, tempfile, pathlib, json (stdlib).
-# Exposes:    TestAssignTargetState, TestValidateTargetState, TestMigrateNodes.
-# Lines:      ~190
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.migrations.aud61_target_state — tier->state
+#             assignment heuristic, write-time validation, dry-run/apply migration
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.migrations.aud61_target_state, samia.core.frontmatter
+# Exposes:    — (test module)
+# Lines:      223
 # --------------------------------------------------------------------------

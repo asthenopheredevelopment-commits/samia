@@ -1,4 +1,4 @@
-"""Tests for samia.core.temporal_substrate — FEAT-2026-06-11 temporal-recall P0.
+"""samia.core.test_temporal_substrate — tests for samia.core.temporal_substrate (FEAT-2026-06-11 temporal-recall P0).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the write-time substrate (proposal §3 + §16.1): the two
@@ -357,17 +357,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_temporal_substrate] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
-# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P0 tests — write-time
-#             substrate. Asserts: fields stamped on new writes (mcp_server +
-#             fact_extractor); counter strictly increasing + concurrency-safe (8 procs)
-#             + restart-survivable + corrupt-heal; engram record carries source
-#             substrate (None on legacy source); legacy node decays unchanged;
-#             chainogram_retrieve byte-identical with vs without the fields.
-# Role:       prove P0's additive-optional, no-migration, retrieval-no-op contract
-# Depends:    temporal_substrate, mcp_server, fact_extractor, hippocampus, tier,
-#             context_extension, frontmatter; unittest, tempfile, json, multiprocessing
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_temporal_substrate
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P0 (write-time substrate, §3)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.temporal_substrate — written_at/episode_seq stamped on primary writes, counter strictly monotone + 8-proc concurrency-safe + restart-survivable + corrupt-heal, engram record lifts source substrate, legacy node decays unchanged, chainogram byte-identical with/without fields
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.temporal_substrate, samia.core.mcp_server, samia.core.fact_extractor, samia.core.hippocampus, samia.core.tier, samia.core.context_extension, samia.core.frontmatter
+# Exposes:    — (test module)
+# Lines:      374
+# ------------------------------------------------------------------------------

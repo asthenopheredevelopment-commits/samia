@@ -327,12 +327,20 @@ def compute_pressure(mem: Path, threshold: float | None = None) -> dict[str, Any
     }
 
 
-# ─────────────────────────────────────────────
-# [sleep_pressure] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.runtime
-# Version:    1.0.0  Updated: 2026-06-07  Status: active
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.sleep_pressure
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-07-memory-rem-sleep-consolidation-cycle-v01 (P1)
+# Layer:      runtime (library helper, no daemon loop)
 # Role:       composite sleep-pressure / health metric (Q2 simple normalized sum)
-# Depends:    json, os, pathlib; samia.runtime.contradiction, samia.core.bio,
-#             samia.core.frontmatter (all fail-soft / lazy)
-# ─────────────────────────────────────────────
+# Stability:  stable — P1 produce-only metric; pure reads, no mutation/thread/clock.
+# ErrorModel: fail-soft throughout — every per-signal reader and the last-resort
+#             per-signal guard degrade a missing/corrupt source to (0, present=False)
+#             rather than raising; compute_pressure never crashes on an absent file.
+# Depends:    json, logging, os, pathlib, typing (stdlib). samia.runtime.contradiction,
+#             samia.core.bio, samia.core.frontmatter (all lazy / fail-soft).
+# Exposes:    compute_pressure, THRESHOLD.
+# Lines:      343
+# --------------------------------------------------------------------------

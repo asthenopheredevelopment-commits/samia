@@ -967,14 +967,28 @@ def _op_inference_backends(args: dict[str, Any]) -> dict[str, Any]:
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.inference
-# Updated: 2026-06-08  FIX-double-load
-# Lines:   ~600
-# Version: 26.3+28.2+82+doubleload
-# phase: AUD82  (CUDA fallback chain + inference_reset_cuda op)
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      AUD82  (CUDA fallback chain + inference_reset_cuda op)
 #        + FIX-2026-06-08: get_backend() is now a LOAD-ONCE singleton via the
 #          per-model-path _model_backend_cache (get_backend_for_model). Kills the
 #          double Qwen-14B load (register_ops + contradiction judge each built a
 #          fresh LlamaCppBackend for the same gguf, ~18GB). A given gguf now loads
 #          at most once; the dedicated BitNet-2B judge backend rides the same cache.
-# layer: runtime (long-lived process)
+#          (lineage: AUD26-26.3 backends + AUD28-28.2 telemetry + AUD82 fallback.)
+# Layer:      runtime (long-lived process)
+# Role:       protocol-abstracted local LLM inference — Mock/LlamaCpp backends, a
+#             load-once get_backend() factory, the CPU/BitNet fallback chain, JSONL
+#             telemetry, and the judge/infer/status/reset IPC ops.
+# Stability:  stable — v26.3+28.2+82+doubleload; protocol + factory + telemetry settled.
+# ErrorModel: fail-soft — get_backend() falls back to MockBackend with a warning when
+#             no real model is available; the fallback chain degrades CPU->BitNet->error;
+#             IPC handlers return ok=False rather than raising; telemetry append is best-effort.
+# Depends:    datetime, hashlib, json, logging, os, re, time, pathlib, typing (stdlib).
+#             llama_cpp (lazy-imported, optional). samia.runtime.ipc (register_op).
+# Exposes:    InferenceBackend, MockBackend, LlamaCppBackend, get_backend,
+#             get_backend_for_model, register_backend, register_ops,
+#             inference_fallback_chain, TelemetryEmitter.
+# Lines:      991
 # --------------------------------------------------------------------------

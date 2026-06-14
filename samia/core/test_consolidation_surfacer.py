@@ -1,4 +1,4 @@
-"""Tests for the consolidation surfacer's atom-mini-chain exclusion (BUG-2026-06-11).
+"""samia.core.test_consolidation_surfacer — tests for the consolidation surfacer's atom-mini-chain exclusion (BUG-2026-06-11).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for consolidation.audit_all's exclusion of the
@@ -105,3 +105,18 @@ class TestSurfacerExcludesAtomChains(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_consolidation_surfacer
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      BUG-2026-06-11 consolidation-surfacer atom-mini-chain exclusion
+# Layer:      test (pytest)
+# Role:       tests for samia.core.consolidation.audit_all — fx_*/all-semantic atom mini-chains are skipped while normal episodic chains still surface near-dup pairs
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.consolidation
+# Exposes:    — (test module)
+# Lines:      124
+# ------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tests for samia.runtime.maintenanced (the release maintenance daemon).
+"""samia.runtime.test_maintenanced — tests for samia.runtime.maintenanced (the release maintenance daemon).
 
 Layer 1 (Owns / Depends):
     Owns:    unit tests for the minimal shippable maintenance spine —
@@ -376,15 +376,18 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_maintenanced] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.runtime
-# Version:    1.0.0  Updated: 2026-06-12  Status: active
-# Role:       contract tests for the release maintenance daemon (single-instance
-#             lock, --oneshot exit-0 + state write, clean SIGTERM, jobs run with
-#             optional deps absent, autofetch-off => no network).
-# Depends:    os, signal, subprocess, sys, tempfile, time, unittest, pathlib;
-#             samia.runtime.{maintenanced,scheduler,watcher,rem_cycle,model_fetch}
-# Note:       scratch tempdir stores ONLY — never the live memory tree, never a
-#             real store, never the network.
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.runtime.test_maintenanced
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      release maintenance daemon
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.maintenanced — single-instance lock,
+#             --oneshot exit-0 + scheduler state write, clean SIGTERM shutdown,
+#             jobs run with optional deps absent, autofetch-off => no network
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.maintenanced, samia.runtime.scheduler, samia.runtime.watcher, samia.runtime.rem_cycle, samia.runtime.model_fetch
+# Exposes:    — (test module)
+# Lines:      395
+# --------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tests for the fact-extraction PRODUCER — FEAT-2026-06-10-memory-fact-extract-producer-v01 P1.
+"""samia.core.test_fact_extract_producer — tests for the fact-extraction PRODUCER (FEAT-2026-06-10-memory-fact-extract-producer-v01 P1).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the producer + drain e2e (inert by default):
@@ -833,31 +833,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_fact_extract_producer] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.2.0  Updated: 2026-06-10  Status: active
-# Phase:      FEAT-2026-06-10-memory-fact-extract-producer-v01 (P1 tests)
-#             + FIX-2026-06-10 tests: backend-OBJECT path (extract_atoms parses
-#               atoms FROM backend.complete; drain passes the object end-to-end),
-#               empty/garbage completion -> rule-splitter fallback, and t10
-#               strengthened to pin an fx_ mini-chain actually loading.
-#             + TUNE-2026-06-10 (decision c) tests: the drain stamps distilled:true
-#               + distilled_at on the live SOURCE after a SUCCESSFUL extraction
-#               (persisted OR all-deduped), does NOT stamp on extraction failure or
-#               an absent source, and the frontmatter-only stamp neither clobbers
-#               the source anchor nor resets its integrity (SHA-skip verified).
-# Role:       verify the queue producer + flag-gated drain persist e2e (inert by
-#             default): enqueue/sentinel, freeze + merge enqueue gating, drain
-#             dedup/persist/provenance/mini-chain, flag-off byte-identity, budget,
-#             old-format compatibility.
-# Depends:    unittest, tempfile, json, sqlite3, os, mock;
-#             samia.core.{fact_extractor,ia,merge_consumer,frontmatter,chain,
-#             vector,context_extension,web_store,integrity},
-#             samia.runtime.{rem_subscribers,rem_cycle,contradiction}
-# Note:       NEVER touches the live store — tmp memory_dir everywhere; the
-#             provenance edge is bound to a temp db_dir so the GLOBAL edges.db is
-#             never written. The LLM is mocked (extract_atoms + backend); no real
-#             model loads. find_contradiction_candidates is mocked so dedup is
-#             deterministic without the embedder.
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_fact_extract_producer
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-10-memory-fact-extract-producer-v01 P1 (+ FIX-2026-06-10 backend-object path / fallback / fx-chain load + TUNE-2026-06-10 distilled stamp)
+# Layer:      test (pytest)
+# Role:       tests for the fact-extract queue producer + flag-gated REM drain — enqueue/sentinel, freeze + merge enqueue gating, drain dedup/persist/provenance/mini-chain, flag-off byte-identity, budget, old-format compat, distilled stamp
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.fact_extractor, samia.core.ia, samia.core.merge_consumer, samia.core.frontmatter, samia.core.chain, samia.core.vector, samia.core.context_extension, samia.core.web_store, samia.core.integrity, samia.runtime.rem_subscribers, samia.runtime.rem_cycle, samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      850
+# ------------------------------------------------------------------------------

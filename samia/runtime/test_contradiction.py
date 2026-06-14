@@ -1,4 +1,4 @@
-"""Tests for samia.runtime.contradiction -- AUD60 contradiction detection.
+"""samia.runtime.test_contradiction — tests for samia.runtime.contradiction (AUD60 contradiction detection).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for embedding candidate finder, judge gate,
@@ -512,15 +512,17 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.test_contradiction
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD60 + FIX-2026-06-08 (judge/synth in-process inference rewire)
-# Layer:      test
-# Stability:  v1.1
-# ErrorModel: unittest assertions
-# Depends:    samia.runtime.contradiction, samia.runtime.inference,
-#             unittest, unittest.mock (stdlib).
-# Exposes:    TestFindCandidatesDisabled, TestJudgeContradictions,
-#             TestSynthesizeNode, TestSynthesisEnabled, TestCheckContradiction.
-# Lines:      ~360
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.contradiction — embedding candidate finder,
+#             LLM judge gate, Tier-2 synthesis, fail-soft posture, orchestrator
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.contradiction, samia.runtime.inference
+# Exposes:    — (test module)
+# Lines:      530
 # --------------------------------------------------------------------------

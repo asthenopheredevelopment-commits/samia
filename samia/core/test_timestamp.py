@@ -1,4 +1,4 @@
-"""Tests for samia.core.timestamp -- AUD63 UTC timestamp utilities.
+"""samia.core.test_timestamp — tests for samia.core.timestamp (AUD63 UTC timestamp utilities).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for now_utc, now_utc_iso, normalize_ts, assert_utc_iso.
@@ -149,13 +149,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# --------------------------------------------------------------------------
 # [Asthenosphere] samia.core.test_timestamp
-# Phase:      AUD63
-# Layer:      test
-# Stability:  v1.0
-# ErrorModel: unittest assertions -- failures are test errors, not runtime.
-# Depends:    samia.core.timestamp, unittest, datetime (stdlib).
-# Exposes:    TestNowUtc, TestNormalizeTs, TestAssertUtcIso.
-# Lines:      ~140
-# --------------------------------------------------------------------------
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      AUD63 (UTC timestamp utilities)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.timestamp — now_utc/now_utc_iso return UTC-aware + parseable, normalize_ts converts Z/local-TZ/naive to +00:00 (fail-open on garbage), assert_utc_iso rejects naive/local/empty with context in the error
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.timestamp
+# Exposes:    — (test module)
+# Lines:      166
+# ------------------------------------------------------------------------------

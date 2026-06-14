@@ -43,13 +43,13 @@ from typing import Any
 # Constants
 # ---------------------------------------------------------------------------
 
-# VALID_TARGET_STATES -- What: the three valid target_state values.
-# VALID_TARGET_STATES -- Why: used by validation in both migration and
+# VALID_TARGET_STATES — What: the three valid target_state values.
+# VALID_TARGET_STATES — Why: used by validation in both migration and
 #   write-time enforcement. Defined here as the canonical source.
 VALID_TARGET_STATES = {"live", "frozen", "archived"}
 
-# DEFAULT_TARGET_STATE -- What: the default target_state for new nodes.
-# DEFAULT_TARGET_STATE -- Why: conservative default -- all nodes are live
+# DEFAULT_TARGET_STATE — What: the default target_state for new nodes.
+# DEFAULT_TARGET_STATE — Why: conservative default -- all nodes are live
 #   unless explicitly frozen or archived by the operator.
 DEFAULT_TARGET_STATE = "live"
 
@@ -350,8 +350,14 @@ if __name__ == "__main__":
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.migrations.aud61_target_state
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD61 -- Phase 1 (migration script)
 # Layer:      runtime/migrations
+# Role:       one-time migration that stamps a target_state field onto every memory
+#             node (tier/path heuristics -> live/frozen/archived); dry-run by default,
+#             --apply to write.
 # Stability:  v1.0 -- one-time migration, stable after first run
 # ErrorModel: fail-open per node (skip + log errors, continue); dry-run
 #             by default prevents accidental writes.
@@ -359,5 +365,5 @@ if __name__ == "__main__":
 #             pathlib, json, argparse, sys (stdlib).
 # Exposes:    migrate_nodes, assign_target_state, validate_target_state,
 #             VALID_TARGET_STATES, DEFAULT_TARGET_STATE, main.
-# Lines:      ~270
+# Lines:      366
 # --------------------------------------------------------------------------

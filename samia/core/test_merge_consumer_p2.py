@@ -1,4 +1,4 @@
-"""Tests for the Tier-2 merge consumer P2 — LLM-synthesized abstraction (gated).
+"""samia.core.test_merge_consumer_p2 — tests for the Tier-2 merge consumer P2 LLM-synthesized abstraction (gated, FEAT-2026-06-07).
 
 Layer 1 (Owns / Depends):
     Owns:    unit tests for merge_consumer's P2 surface —
@@ -461,3 +461,26 @@ class TestMcpSurface(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_merge_consumer_p2
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 Tier-2 merge consumer P2 (operator-gated)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.merge_consumer P2 — synthesize_abstraction /
+#             synthesize_pending PROPOSE a draft (no node created), confirm_
+#             abstraction creates the node + supersedes BOTH sources restorably
+#             + provenance edges, reject changes nothing, inference-disabled is
+#             a safe no-op, abstractions NEVER auto-applied, P1 dup merge still
+#             works, and the MCP list/confirm/reject surface delegates.
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.merge_consumer, samia.core.ia,
+#             samia.core.frontmatter, samia.core.web_store,
+#             samia.core.mcp_server, samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      488
+# --------------------------------------------------------------------------

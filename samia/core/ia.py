@@ -1,38 +1,34 @@
 """samia.core.ia — IA runtime primitives: compress, freeze, thaw, merge, step_up.
 
-Carved from memory_ia.py. Per design doc §1.1 + §1.3, the daemon's
-`ia_consolidation` job calls these primitives directly so it can:
-  - freeze cold nodes (move to archive/, record in pool, drop from nodes/)
-  - thaw frozen nodes back into nodes/ on demand
-  - compress live-node bodies into the pool non-destructively (seeding step)
-  - merge two nodes into one (binary SAM merge)
+Layer 1 (Owns / Depends):
+    Owns:    Pool dataclass (load/save/recompute_density/next_addr);
+             segment_body, segment_hash, compress_body, decompress_body — the pool
+                 segmentation/compression primitives.
+             compress, freeze, thaw, inspect, step_up, pool_stats, merge — the
+                 lifecycle primitives the daemon's ia_consolidation job calls.
+             forget_node (P0 cross-tier invalidation cascade), restore_node,
+                 detect_wrong_deletion (P3a restorable supersession).
+    Depends: stdlib only directly (hashlib, json, re, sys, dataclasses, datetime,
+             pathlib). samia.core.frontmatter (parse/serialize). LAZY in the
+             cascade: web_store, bio, chain, vector (forget_node); vector
+             (restore_node); fact_extractor (freeze enqueue, fail-open).
+Layer 2 (What / Why):
+    What: per design doc §1.1 + §1.3, the ia_consolidation job drives these:
+          freeze cold nodes (compress body into the pool, archive/<id>.frozen.json,
+          drop from nodes/, cascade forget); thaw them back on demand; compress live
+          bodies into the pool non-destructively; merge two same-chain nodes into
+          one (binary SAM merge). The pool is content-addressed (segment_hash) so
+          identical segments are stored once and ref-counted.
+    Why:  freeze/merge remove a node FILE, which would otherwise leave dangling
+          'ghost' edges across the graph — so every removal cascades through
+          forget_node (edges.db + edge_weights + chains + vector). Supersession
+          (contradiction / supersede) full-archives the live node FIRST so
+          restore_node can un-forget it byte-exact; detect_wrong_deletion auto-
+          restores a wrongly-deleted belief. Q4 OPERATOR OVERRIDE: auto-supersede is
+          made safe by reversibility, so it deletes-but-restorably, not surface-only.
 
-Public API (parameterized on memory_dir):
-  Pool dataclass with load(memory_dir) / save() / recompute_density() / next_addr()
-  segment_body(body) → list[(seg_id, content)]
-  segment_hash(content) → str
-  compress_body(body, pool, node_id) → (compressed, stats)
-  decompress_body(compressed, pool) → str
-  compress(memory_dir, node_name)
-  freeze(memory_dir, node_name)
-  thaw(memory_dir, frozen_id)
-  inspect(memory_dir, frozen_id)
-  step_up(memory_dir, address)
-  pool_stats(memory_dir)
-  merge(memory_dir, node_a, node_b)
-  forget_node(memory_dir, node, reason, db_dir, superseded_by)  # FEAT-2026-06-07 P0+P3a
-  restore_node(memory_dir, node_id)                             # FEAT-2026-06-07 P3a
-  detect_wrong_deletion(memory_dir, new_node_id)                # FEAT-2026-06-07 P3a
-
-FEAT-2026-06-07 P3a/P3b (negative consolidation, restorable): forget_node's supersession
-reasons ({"contradiction","supersede"}) full-archive the live node
-(archive/<id>.superseded.json) before the cascade so restore_node can un-forget it byte-exact;
-detect_wrong_deletion is the self-healing watch that auto-restores a wrongly-deleted belief.
-Q4 OPERATOR OVERRIDE: auto-supersede is made safe by reversibility via restore_node, so a
-confirmed/auto supersession deletes-but-restorably rather than surfacing-only.
-
-Acceptance: byte-identical to pre-refactor memory_ia.py CLI output on the
-same memory tree (design doc §8.1).
+Acceptance: byte-identical to pre-refactor memory_ia.py CLI output on the same
+    memory tree (design doc §8.1).
 """
 
 from __future__ import annotations
@@ -493,9 +489,9 @@ def _append_forgotten_log(memory_dir: Path, node_id: str, reason: str) -> None:
         f.write(json.dumps(rec) + "\n")
 
 
-# _ARCHIVE_REASONS -- What: the forget reasons that mean "this node is being replaced
+# _ARCHIVE_REASONS — What: the forget reasons that mean "this node is being replaced
 #   by a competing claim" and so must be FULL-archived (restorable), not just logged.
-# _ARCHIVE_REASONS -- Why: Q4 OPERATOR OVERRIDE — auto-supersede made safe by
+# _ARCHIVE_REASONS — Why: Q4 OPERATOR OVERRIDE — auto-supersede made safe by
 #   reversibility via restore_node. Both the online auto-supersede path
 #   (reason="contradiction") and the operator-confirmed supersession path
 #   (reason="supersede", mcp_server.memory_confirm_supersession) retire a node for being
@@ -595,8 +591,8 @@ def forget_node(memory_dir: Path, node: str, reason: str = "manual",
     except Exception as e:
         stats["vector"] = {"error": str(e)}
     _append_forgotten_log(memory_dir, fname, reason)
-    return stats
     print(f"[ia] NOTE: chain manifest needs regeneration — run memory_migrate.py")
+    return stats
 
 
 def restore_node(memory_dir: Path, node_id: str) -> dict:
@@ -709,9 +705,10 @@ def detect_wrong_deletion(memory_dir: Path, new_node_id: str) -> dict:
 
 
 # ─────────────────────────────────────────────
-# [ia] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    carved from memory_ia.py  Updated: 2026-06-10  Status: active
+# [Asthenosphere] samia.core.ia
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      §1.1/§1.3 IA primitives (compress/freeze/thaw/merge/step_up)
 #             + FEAT-2026-06-07 P0 (forget_node cascade) + P3a/P3b (restorable
 #               supersede/restore + detect_wrong_deletion)
@@ -719,11 +716,21 @@ def detect_wrong_deletion(memory_dir: Path, new_node_id: str) -> dict:
 #               enqueues a session_offload body for fact extraction — gated on
 #               ASTHENOS_FACT_EXTRACT_ENABLED, fail-OPEN, ADDITIVE keep+link; the
 #               source is still archived/forgotten exactly as before)
+# Layer:      core (pure library, no daemon dependency)
 # Role:       IA runtime primitives (pool compress, freeze/thaw, merge, forget/
 #             restore cascade) — the daemon's ia_consolidation job calls these
+# Stability:  stable — byte-identical to pre-refactor memory_ia.py CLI output
+#             (design doc §8.1); freeze's fact-extract enqueue is the only new
+#             write and is gated + fail-open
+# ErrorModel: CLI primitives sys.exit on a missing node / bad frontmatter; the
+#             forget_node cascade is idempotent and fail-soft PER STORE (one store
+#             erroring never blocks the others, errors captured into the stat dict);
+#             Pool.save is atomic (temp + os.replace); freeze's enqueue is fail-OPEN
 # Depends:    hashlib, json, re, sys, datetime, pathlib (stdlib);
 #             samia.core.frontmatter; lazy: web_store, bio, chain, vector,
 #             fact_extractor (freeze enqueue, fail-open)
-# Note:       freeze's fact-extract enqueue is the ONLY new write here and is
-#             gated + fail-open — flag-off freeze is byte-identical to before.
-# ─────────────────────────────────────────────
+# Exposes:    Pool, compress, freeze, thaw, inspect, step_up, pool_stats, merge,
+#             forget_node, restore_node, detect_wrong_deletion, segment_body,
+#             segment_hash, compress_body, decompress_body
+# Lines:      733
+# --------------------------------------------------------------------------

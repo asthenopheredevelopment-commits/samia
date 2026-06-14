@@ -19,8 +19,19 @@ from samia.runtime.client import SamiaClient   # noqa: F401
 
 __version__ = "0.1.0"
 
-# ──────────────────────────────────────────────────────────────────────────────
+# --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime
-# phase: AUD26-26.1
-# layer: runtime (long-lived process)
-# ──────────────────────────────────────────────────────────────────────────────
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      AUD26-26.1
+# Layer:      runtime (long-lived process)
+# Role:       package marker for the runtime process plane — re-exports the public
+#             SamiaClient so callers import from one surface.
+# Stability:  v0.1.0 -- package facade, stable import surface.
+# ErrorModel: none of its own; re-export only (import errors surface from the
+#             submodule being re-exported).
+# Depends:    samia.runtime.client (SamiaClient).
+# Exposes:    SamiaClient, __version__.
+# Lines:      34
+# --------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""temporal_distinctiveness.py -- log-time distinctiveness term (P5, SIMPLE ratio rule).
+"""samia.core.temporal_distinctiveness -- log-time distinctiveness term (P5, SIMPLE ratio rule).
 
 Layer 1 (Owns / Depends):
     Owns:    The distinctiveness re-ranker D̂_c of the temporal-recall layer
@@ -68,7 +68,7 @@ from pathlib import Path
 from typing import Optional
 
 # ── Seed parameters (§7.2/§7.4/§7.6; c joins the joint-calibration vector later) ─────
-# DIST_SHARPNESS_SEED -- What: SIMPLE's c, the distinctiveness sharpness — larger c →
+# DIST_SHARPNESS_SEED — What: SIMPLE's c, the distinctiveness sharpness — larger c →
 #   sharper confusability falloff → more candidates count as "isolated".
 # Why: §7.2. Seed c=1.0, bound [0.5, 2.0]. Read each call (live env, default seed) so a
 #   calibration adapter can sweep it without re-import; only consulted when the dist term
@@ -78,11 +78,11 @@ DIST_SHARPNESS_MIN = 0.5
 DIST_SHARPNESS_MAX = 2.0
 DIST_SHARPNESS_ENV = "ASTHENOS_DIST_C"
 
-# DIST_MAX_RATIO -- What: the <1000× upper sanity bound on the pool's dynamic range
+# DIST_MAX_RATIO — What: the <1000× upper sanity bound on the pool's dynamic range
 #   (§7.4). Beyond ~1000× the oldest candidate's T is dominated by st_mtime/materialized_
 #   at artifacts rather than true event time, so we clip |logT_i − logT_j| at log(1000)
 #   before the exp (the tails are not trustworthy past that span).
-# DIST_MIN_LOG_SPREAD -- What: the lower edge of the applicability gate. If the pool's
+# DIST_MIN_LOG_SPREAD — What: the lower edge of the applicability gate. If the pool's
 #   total log-time spread is effectively zero (all candidates clustered within a hair on
 #   the log axis), D(i) is uniform and min-max degenerate — we emit no signal instead of
 #   noise (§7.4). A tiny epsilon distinguishes a genuine spread from float wobble.
@@ -93,7 +93,7 @@ DIST_MAX_RATIO = 1000.0
 DIST_LOG_CLIP = math.log(DIST_MAX_RATIO)
 DIST_MIN_LOG_SPREAD = 1e-9
 
-# DIST_MIN_T_SECONDS -- What: floor on T_i so log(T_i) is finite and well-behaved even
+# DIST_MIN_T_SECONDS — What: floor on T_i so log(T_i) is finite and well-behaved even
 #   for a just-written node (T near 0). One second is below the day-granular floor of the
 #   fallback path and harmless when written_at gives sub-second resolution.
 # Why: log(0) is −inf; a 1s floor keeps the log axis defined without distorting any
@@ -263,10 +263,10 @@ def dist_at(dist: dict, cname: Optional[str]) -> float:
     return float(dist.get(cname, 0.0))
 
 
-# ─────────────────────────────────────────────
-# [temporal_distinctiveness] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
+# [Asthenosphere] samia.core.temporal_distinctiveness
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P5 — temporal
 #             distinctiveness (§7). SIMPLE log-time ratio D(i)=1/Σ_j exp(−c·|logT_i−
 #             logT_j|) over the candidate pool (c=1.0, bound [0.5,2.0]); T_i = seconds
@@ -276,9 +276,19 @@ def dist_at(dist: dict, cname: Optional[str]) -> float:
 #             Two-stage dist_vector→dist_at (pool computed once, read per chain) mirrors
 #             successor.need_vector/need_at. Inert at retrieval until ASTHENOS_TEMPORAL_
 #             WEIGHT + λD≥ε flip it on; flag-off / λD=0 is a byte-identical no-op.
+# Layer:      core (pure library, no daemon dependency)
 # Role:       compute the multiplicative distinctiveness modulator D̂_c (SIMPLE ratio)
+# Stability:  stable -- v1.0.0; additive-optional, inert until the temporal flag + λD flip on.
+# ErrorModel: fail-soft to no-signal — an unreadable node time, a pool of < 2 timed
+#             candidates, or a degenerate log-spread reads 0.0 for the affected chain(s);
+#             both gate edges fail soft so D̂ can only re-order inside the trustworthy
+#             regime, never hurt a result (envelope reduces to 1.0 on an empty pool).
 # Depends:    math, time, datetime, os (stdlib); temporal (infer_valid_from — REUSED),
-#             frontmatter (read_node — the written_at high-resolution source)
+#             frontmatter (read_node — the written_at high-resolution source).
+# Exposes:    dist_sharpness, representative_time_seconds, dist_vector, dist_at.
+#             Constants: DIST_SHARPNESS_SEED/_MIN/_MAX/_ENV, DIST_MAX_RATIO,
+#             DIST_LOG_CLIP, DIST_MIN_LOG_SPREAD, DIST_MIN_T_SECONDS.
 # Citations:  Brown, Neath & Chater (2007) SIMPLE, Psychol. Rev. 114(3) 539–576;
 #             Bjork & Whitten (1974) Cognitive Psychology 6(2) 173–189.
-# ─────────────────────────────────────────────
+# Lines:      291
+# --------------------------------------------------------------------------

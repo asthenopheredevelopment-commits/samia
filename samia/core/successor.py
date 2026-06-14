@@ -1,4 +1,4 @@
-"""successor.py -- need-as-successor-representation term (P3 symmetric + P6 directed).
+"""samia.core.successor -- need-as-successor-representation term (P3 symmetric + P6 directed).
 
 Layer 1 (Owns / Depends):
     Owns:    The need re-ranker N̂_c of the temporal-recall layer (FEAT-2026-06-11-
@@ -394,10 +394,10 @@ def need_at(need: dict, node: str | None) -> float:
     return float(need.get(_node_key(node), 0.0))
 
 
-# ─────────────────────────────────────────────
-# [successor] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
+# [Asthenosphere] samia.core.successor
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P3+P6 — need-as-successor-
 #             representation term. P3 (§5.1-5.4, symmetric phase 1): row-normalize the
 #             EXISTING undirected edge_weights.json into a row-stochastic kernel T; query-
@@ -411,6 +411,16 @@ def need_at(need: dict, node: str | None) -> float:
 #             5→4 fold). No standalone λR. With no episode_transitions.json the forward kernel
 #             is byte-identical to phase 1. Inert at retrieval until ASTHENOS_TEMPORAL_WEIGHT +
 #             λN≥ε flip it on; flag-off / λN=0 is a byte-identical no-op.
+# Layer:      core (pure library, no daemon dependency)
 # Role:       compute the multiplicative need modulator N̂_c (the EVB A+B merge)
-# Depends:    bio (_load_edge_weights + _bio_paths[episode_transitions] — REUSED stores)
-# ─────────────────────────────────────────────
+# Stability:  stable -- v1.0.0; additive-optional, inert until the temporal flag + λN flip on.
+# ErrorModel: fail-open at every edge — malformed edge/transition keys and unparseable
+#             weights are skipped; an empty graph or empty active set yields an empty need
+#             map, so every N̂_c reads 0.0 and the envelope reduces to 1.0 (no migration).
+# Depends:    bio (_load_edge_weights + _bio_paths[episode_transitions] — REUSED stores).
+#             stdlib (os, pathlib); json via __import__ in the directed reader.
+# Exposes:    successor_gsr, successor_l, need_vector, need_at. Constants:
+#             SUCCESSOR_GSR_SEED, SUCCESSOR_L_SEED, SUCCESSOR_ACTIVE_SET_SIZE,
+#             SUCCESSOR_GSR_ENV, SUCCESSOR_L_ENV, and the GSR/L bound constants.
+# Lines:      423
+# --------------------------------------------------------------------------

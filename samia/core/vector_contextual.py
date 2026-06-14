@@ -1,18 +1,33 @@
 """samia.core.vector_contextual — contextual vector index.
 
-Carved from memory_vector_index_contextual.py. Companion to samia.core.vector;
-prepends a structural-context prefix (chain_id + sibling node names) to each
-node's text before embedding. Open-source-budget version of Anthropic's
-Contextual Retrieval — uses chain-graph metadata instead of LLM-generated
-context per chunk.
+Layer 1 (Owns / Depends):
+    Owns:    build — (re)build the contextual embedding index over nodes/, caching
+                 unchanged rows by sha256. query — cosine top-k over that index.
+             MODEL_ID, EMBED_DIM, MAX_TOKENS — re-exported from samia.core.vector
+                 so callers read one embedding contract.
+    Depends: numpy. samia.core.vector (the base embedding engine — supplies
+             _embed_batch, _load_node_text, _sha256, and the model constants).
+             stdlib (datetime, json, sys, time, pathlib).
+Layer 2 (What / Why):
+    What: a companion to samia.core.vector that prepends a structural-context
+          prefix ("This node is in chain '<id>' with sibling nodes: ...") to each
+          node's body BEFORE embedding, then stores the vectors in
+          <memory_dir>/vector_index/embeddings_contextual.npy +
+          manifest_contextual.json. build() re-embeds only nodes whose
+          prefixed-content sha256 changed (rows for unchanged nodes are copied
+          from the cached array); query() embeds the query text and returns the
+          top_k by dot product against the (normalized) index.
+    Why:  this is the open-source-budget version of Anthropic's Contextual
+          Retrieval — instead of paying an LLM to write a context blurb per chunk,
+          it derives the context from FREE chain-graph metadata (chain_id + sibling
+          names). The prefix disambiguates near-duplicate bodies by their place in
+          the graph, improving recall without per-chunk LLM cost. sha256-keyed
+          caching keeps a rebuild incremental: only genuinely-changed nodes (or
+          ones whose chain membership shifted, since that changes the prefix) pay
+          the embedding cost.
 
-Index layout (under <memory_dir>/vector_index/):
-    embeddings_contextual.npy
-    manifest_contextual.json
-
-Public API (parameterized on memory_dir):
-    build(memory_dir, rebuild=False) → manifest dict
-    query(memory_dir, text, top_k=24) → list[{score, node, title}]
+Layer 3 (Changelog):
+    (carved from memory_vector_index_contextual.py — library plane extraction.)
 """
 
 from __future__ import annotations
@@ -52,6 +67,8 @@ def _manifest_path(memory_dir: Path) -> Path:
     return _index_dir(memory_dir) / "manifest_contextual.json"
 
 
+# _build_node_to_chain_map — What: scan chains/*.json and return {node_filename ->
+#     {chain_id, addr, neighbors[:6], tier}} for every node that is a chain member.
 def _build_node_to_chain_map(memory_dir: Path) -> dict[str, dict]:
     m: dict[str, dict] = {}
     for p in sorted(_chains_dir(memory_dir).glob("*.json")):
@@ -76,8 +93,14 @@ def _build_node_to_chain_map(memory_dir: Path) -> dict[str, dict]:
                 "tier": mm.get("tier"),
             }
     return m
+# _build_node_to_chain_map — Why: the prefix needs each node's siblings, so this
+#     inverts the chain->members layout into a node->context lookup once per build.
+#     neighbors caps at 6 to bound prefix length (and embedding tokens); a malformed
+#     chain file is skipped, not fatal, so one bad manifest can't abort the build.
 
 
+# _load_node_text_contextual — What: load a node's (title, body) via the base vector
+#     loader, then return (title, context_prefix + body) using its chain context.
 def _load_node_text_contextual(path: Path,
                                node_to_chain: dict[str, dict]
                                ) -> tuple[str, str]:
@@ -92,8 +115,15 @@ def _load_node_text_contextual(path: Path,
     else:
         prefix = "This node is a singleton (no chain). "
     return title, prefix + body
+# _load_node_text_contextual — Why: the embedded text — not the stored body — carries
+#     the chain context, so the sha256 cache key (computed on this prefixed content)
+#     correctly invalidates when a node's chain membership changes even if its body did
+#     not. A singleton gets an explicit "(no chain)" prefix so its key is still stable.
 
 
+# build — What: (re)embed nodes/ into the contextual index — reuse a cached row when
+#     the node's prefixed-content sha256 is unchanged, embed the rest in batches of 16,
+#     stack into embeddings_contextual.npy + write manifest_contextual.json.
 def build(memory_dir: Path, rebuild: bool = False) -> dict:
     nodes_dir = _nodes_dir(memory_dir)
     embed_path = _embed_path(memory_dir)
@@ -139,6 +169,9 @@ def build(memory_dir: Path, rebuild: bool = False) -> dict:
         new_entries[rel] = {"sha256": sig, "title": title, "row": i,
                             "in_chain": rel in node_to_chain}
 
+        # CacheReuse — What: if this node's prefixed-content sha256 matches the cached
+        #     manifest entry AND its old row is in range, copy the cached vector and skip
+        #     re-embedding; otherwise mark the row for embedding below.
         if (cached and cached.get("sha256") == sig
                 and cached_emb is not None
                 and cached.get("row") is not None):
@@ -149,6 +182,10 @@ def build(memory_dir: Path, rebuild: bool = False) -> dict:
         rows.append(None)
         to_embed_idx.append(i)
         to_embed_text.append(content)
+        # CacheReuse — Why: embedding is the cost; an unchanged node should never re-pay
+        #     it. The old_row bounds-check guards against a manifest that points past a
+        #     shorter/older cached array (e.g. nodes were deleted) — a stale row index
+        #     falls through to a fresh embed rather than indexing out of range.
 
     n = len(nodes)
     if to_embed_idx:
@@ -190,6 +227,8 @@ def build(memory_dir: Path, rebuild: bool = False) -> dict:
     return manifest_out
 
 
+# query — What: embed `text`, dot it against the stored index, and return the top_k
+#     nodes as [{node, score, title}] (empty list if no index has been built).
 def query(memory_dir: Path, text: str, top_k: int = 24) -> list[dict]:
     embed_path = _embed_path(memory_dir)
     manifest_path = _manifest_path(memory_dir)
@@ -202,6 +241,8 @@ def query(memory_dir: Path, text: str, top_k: int = 24) -> list[dict]:
     top = np.argsort(-sims)[:top_k]
     out: list[dict] = []
     entries = manifest["entries"]
+    # RowToName — What: invert the manifest's {name -> {row}} into {row -> name} so a
+    #     similarity index (a row number) maps back to its node filename.
     name_by_row: dict[int, str] = {}
     for rel, e in entries.items():
         name_by_row[int(e["row"])] = rel
@@ -213,3 +254,28 @@ def query(memory_dir: Path, text: str, top_k: int = 24) -> list[dict]:
         out.append({"node": rel, "score": float(sims[idx_i]),
                     "title": entries[rel].get("title", rel)})
     return out
+# query — Why: a row with no name (manifest/embeddings drift) is skipped rather than
+#     raising, so a partially-stale index still returns its resolvable hits; a missing
+#     index returns [] so callers (e.g. temporal.query's semantic prefilter) degrade
+#     instead of crashing.
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.vector_contextual
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Carved from memory_vector_index_contextual.py (library plane).
+# Layer:      core (library; companion to samia.core.vector).
+# Role:       contextual vector index — embeds each node behind a chain-graph context
+#             prefix (chain_id + siblings) for cheap Contextual-Retrieval recall; sha256-
+#             keyed incremental build + cosine top-k query.
+# Stability:  stable -- contextual embedding index; API parameterized on memory_dir.
+# ErrorModel: query returns [] when no index exists and skips rows with no manifest
+#             name (drift-tolerant); build skips malformed chain manifests and an
+#             empty nodes/ returns {} (no index written).
+# Depends:    numpy. samia.core.vector (_embed_batch, _load_node_text, _sha256,
+#             MODEL_ID/EMBED_DIM/MAX_TOKENS). datetime, json, sys, time, pathlib.
+# Exposes:    build, query, MODEL_ID, EMBED_DIM, MAX_TOKENS.
+# Lines:      278
+# --------------------------------------------------------------------------

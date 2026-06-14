@@ -1,4 +1,4 @@
-"""Tests for samia.runtime.idle_pulse — registry, cadence gating, coalescing,
+"""samia.runtime.idle_pulse.test_idle_pulse — tests for samia.runtime.idle_pulse: registry, cadence gating, coalescing,
 fail-open isolation, and IPC op shapes.
 
 These tests never load the embedding model: they exercise the registry +
@@ -178,3 +178,18 @@ if __name__ == "__main__":
                 print(f"FAIL {name}: {type(e).__name__}: {e}")
     print(f"\n{'OK' if not failures else str(failures) + ' FAILED'}")
     sys.exit(1 if failures else 0)
+
+
+# [Asthenosphere] samia.runtime.idle_pulse.test_idle_pulse
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-02-idle-pulse-daemon-resident-tick-loop-v01
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.idle_pulse — subscriber register/re-register stat preservation, cadence gating (due/skip/force), fail-open isolation of a raising subscriber, IPC nudge/status op shapes, default-subscriber seeding (post-RELEASE carve)
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    pytest + samia.runtime.idle_pulse
+# Exposes:    — (test module)
+# Lines:      197
+# ------------------------------------------------------------------------------

@@ -38,23 +38,23 @@ from pathlib import Path
 
 _log = logging.getLogger("samia.core.paths")
 
-# ASTHENOS_MEMORY_DIR_ENV -- What: the override env var name.
-# ASTHENOS_MEMORY_DIR_ENV -- Why: a single named knob lets any deployment
+# ASTHENOS_MEMORY_DIR_ENV — What: the override env var name.
+# ASTHENOS_MEMORY_DIR_ENV — Why: a single named knob lets any deployment
 #     (release, CI, container) point the memory plane wherever it wants without
 #     touching code or relying on file position. Highest precedence.
 ASTHENOS_MEMORY_DIR_ENV = "ASTHENOS_MEMORY_DIR"
 
-# _LEGACY_PARENTS_DEPTH -- What: how many parents up from THIS file the dev
+# _LEGACY_PARENTS_DEPTH — What: how many parents up from THIS file the dev
 #     memory root sits.
-# _LEGACY_PARENTS_DEPTH -- Why: paths.py lives at .../memory/tools/samia/core/
+# _LEGACY_PARENTS_DEPTH — Why: paths.py lives at .../memory/tools/samia/core/
 #     paths.py, so parents[0]=core, [1]=samia, [2]=tools, [3]=memory. This is
 #     the SAME nesting depth the legacy bug_records (runtime/), rem_cycle
 #     (runtime/) and hebbian_health (core/) sites used (all parents[3]), so the
 #     candidate this produces is byte-identical to what they derived.
 _LEGACY_PARENTS_DEPTH = 3
 
-# _XDG_FALLBACK -- What: the release/last-resort memory root.
-# _XDG_FALLBACK -- Why: XDG_DATA_HOME convention (default ~/.local/share),
+# _XDG_FALLBACK — What: the release/last-resort memory root.
+# _XDG_FALLBACK — Why: XDG_DATA_HOME convention (default ~/.local/share),
 #     matching the rest of the tree. Used only when neither the env var nor a
 #     real legacy root is available -- e.g. a clean site-packages install.
 _log_emitted_fallback = False  # one-time-log latch (module-scoped)
@@ -119,15 +119,23 @@ def resolve_memory_root(create: bool = True) -> Path:
     return fallback
 
 
-# ─────────────────────────────────────────────
-# [paths] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
+# [Asthenosphere] samia.core.paths
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      2026-06-11 BUG-paths — extracted the memory-root derivation out of
+#             bug_records / rem_cycle / hebbian_health into one layout-safe resolver
+#             (env -> verified-legacy file-position -> XDG fallback).
+# Layer:      core (pure library, no daemon dependency)
 # Role:       single layout-safe resolver for the SAM/IA memory root
 #             (env -> verified-legacy file-position -> XDG fallback)
-# Depends:    os, logging, pathlib (stdlib only)
-# Note:       PRODUCE-ONLY at import; resolve_memory_root() may create the
-#             env-named or XDG fallback root, but the verified-legacy clause
-#             (the dev/daemon path) creates nothing and is byte-identical to
-#             the prior parents[3] derivation.
-# ─────────────────────────────────────────────
+# Stability:  stable -- v1.0.0; the verified-legacy clause is byte-identical to the
+#             prior parents[3] derivation.
+# ErrorModel: never raises on resolution -- always returns a path; PRODUCE-ONLY at
+#             import. resolve_memory_root() may create the env-named or XDG fallback
+#             root, but the verified-legacy clause (the dev/daemon path) creates
+#             nothing. create=False suppresses all directory creation.
+# Depends:    os, logging, pathlib (stdlib only).
+# Exposes:    resolve_memory_root, ASTHENOS_MEMORY_DIR_ENV.
+# Lines:      138
+# --------------------------------------------------------------------------

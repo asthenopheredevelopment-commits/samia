@@ -1,17 +1,26 @@
-"""aud84_prefix_migration.py -- AUD84 Phase 3 proposal prefix migration.
+"""samia.runtime.migrations.aud84_prefix_migration — AUD84 Phase 3 one-time proposal prefix retag migration.
 
-One-time retag migration for ~85 existing SEWE proposals. Reclassifies
-each proposal from the legacy single-namespace PROP-* id scheme into
-one of eight prefix-coded categories (AUD, BUG, FEAT, RSCH, REF, OPS,
-DOC, MISC) per the taxonomy defined in AUD84 D1.
+Layer 1 (Owns / Depends):
+    Owns:    load_proposal_corpus — load + cutoff-filter the PROP-* proposal JSONs.
+             infer_prefix — the D2 cascade (manual overrides -> kind rules -> title
+                 keyword scoring -> MISC) returning (prefix, confidence, rationale).
+             generate_new_id — build PREFIX-YYYY-MM-DD-slug-v01 from an old id.
+             dry_run — write the markdown plan table (the safety gate).
+             apply — operator-gated file renames + JSON id/kind rewrites.
+             main — the dry-run-by-default / --apply CLI.
+    Depends: stdlib only (json, os, re, shutil, sys, datetime, pathlib).
+Layer 2 (What / Why):
+    What: reclassifies ~85 legacy single-namespace PROP-* proposals into eight
+          prefix-coded categories (AUD, BUG, FEAT, RSCH, REF, OPS, DOC, MISC) per the
+          AUD84 D1 taxonomy. dry_run builds + writes the plan for review; apply renames
+          each file and rewrites its id/kind, preserving the original id as legacy_id.
+    Why:  the prefix scheme is what makes the proposal corpus filterable by class. A
+          MIGRATION_CUTOFF excludes concurrently-drafted proposals (the D2 safety rule).
+          Dry-run is the DEFAULT and apply requires the explicit --apply flag, so the
+          destructive step never runs without an operator-reviewed plan.
 
-Dry-run by default: produces a markdown plan table at
-docs/audits/aud84_migration_plan_2026-05-07.md. Only the --apply flag
-triggers actual file renames and JSON edits.
-
-Owns: load_proposal_corpus, infer_prefix, generate_new_id, dry_run, apply
-Depends on: json (stdlib), pathlib (stdlib), shutil (stdlib), re (stdlib),
-            datetime (stdlib), os (stdlib)
+Layer 3 (Changelog):
+    AUD84 Phase 3 (2026-05-07). One-time migration; experimental, operator-gated.
 """
 
 import json
@@ -23,15 +32,15 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # ============================================================================
-# Constants -- What: taxonomy prefixes and the safe migration cutoff
-# Constants -- Why: AUD84 D1 defines 8 prefixes; D2 cutoff prevents
+# Constants — What: taxonomy prefixes and the safe migration cutoff
+# Constants — Why: AUD84 D1 defines 8 prefixes; D2 cutoff prevents
 #   collisions with concurrently-drafted proposals
 # ============================================================================
 
 VALID_PREFIXES = ("AUD", "BUG", "FEAT", "RSCH", "REF", "OPS", "DOC", "MISC")
 
-# -- What: proposals created at or after this timestamp are excluded from migration
-# -- Why: AUD84 was created at 2026-05-07T03:25; anything at 03:00+ may be
+# — What: proposals created at or after this timestamp are excluded from migration
+# — Why: AUD84 was created at 2026-05-07T03:25; anything at 03:00+ may be
 #   concurrently drafted by other HAP agents
 MIGRATION_CUTOFF = datetime(2026, 5, 7, 3, 0, 0, tzinfo=timezone(timedelta(hours=-5)))
 
@@ -51,8 +60,8 @@ AUDIT_LOG_DEFAULT = Path(os.path.expanduser(
 # Slug extraction helpers
 # ============================================================================
 
-# -- What: map AUD numbers to human-readable slugs for proposals with empty titles
-# -- Why: early proposals (AUD01-AUD17, VG01, 7c8343, cf0b84) lack title fields;
+# — What: map AUD numbers to human-readable slugs for proposals with empty titles
+# — Why: early proposals (AUD01-AUD17, VG01, 7c8343, cf0b84) lack title fields;
 #   the slug comes from either the filename or the document_path basename
 _LEGACY_SLUG_MAP = {
     "PROP-2026-05-01-7c8343": "unroutable-task-sig-birth",
@@ -99,7 +108,7 @@ _LEGACY_SLUG_MAP = {
         "sam-ia-runtime-daemon",
     "PROP-2026-05-02-AUD27-rename-rem-training":
         "rename-rem-training",
-    # -- What: disambiguate AUD33 vs AUD37 slugs (both "skills-catalog" on same date)
+    # — What: disambiguate AUD33 vs AUD37 slugs (both "skills-catalog" on same date)
     "PROP-2026-05-06-AUD33-skills-catalog":
         "skills-catalog-launcher",
     "PROP-2026-05-06-AUD37-skills-catalog-v01":
@@ -110,24 +119,24 @@ _LEGACY_SLUG_MAP = {
 def _slug_from_id(proposal_id: str) -> str:
     """Extract a slug from proposal id or legacy slug map.
 
-    -- What: produces a kebab-case slug suitable for the new filename
-    -- Why: new id format is PREFIX-YYYY-MM-DD-slug-vNN; the slug must be
+    — What: produces a kebab-case slug suitable for the new filename
+    — Why: new id format is PREFIX-YYYY-MM-DD-slug-vNN; the slug must be
        derived from either the title, the filename stem, or the hardcoded map
     """
     if proposal_id in _LEGACY_SLUG_MAP:
         return _LEGACY_SLUG_MAP[proposal_id]
 
-    # -- What: strip the PROP-YYYY-MM-DD- prefix and -vNN suffix
-    # -- Why: the remaining text is already a usable slug
+    # — What: strip the PROP-YYYY-MM-DD- prefix and -vNN suffix
+    # — Why: the remaining text is already a usable slug
     stripped = re.sub(r"^PROP-\d{4}-\d{2}-\d{2}-", "", proposal_id)
     stripped = re.sub(r"-v\d+$", "", stripped)
 
-    # -- What: remove AUD prefix from slug if present (e.g. AUD28.7-offload-pivot)
-    # -- Why: the new prefix replaces AUD; keeping it in slug would be redundant
+    # — What: remove AUD prefix from slug if present (e.g. AUD28.7-offload-pivot)
+    # — Why: the new prefix replaces AUD; keeping it in slug would be redundant
     stripped = re.sub(r"^AUD\d+\.?\d*-?", "", stripped)
 
-    # -- What: strip trailing version suffix that was already in the original slug
-    # -- Why: generate_new_id appends -v01, so an existing -v01 in slug
+    # — What: strip trailing version suffix that was already in the original slug
+    # — Why: generate_new_id appends -v01, so an existing -v01 in slug
     #   would cause duplication (e.g. skills-catalog-v01-v01)
     stripped = re.sub(r"-v\d+$", "", stripped)
 
@@ -137,8 +146,8 @@ def _slug_from_id(proposal_id: str) -> str:
 def _extract_date_from_id(proposal_id: str) -> str:
     """Extract the YYYY-MM-DD date portion from a PROP-* id.
 
-    -- What: pulls the original date from the legacy id
-    -- Why: migration preserves original dates in filenames per D2
+    — What: pulls the original date from the legacy id
+    — Why: migration preserves original dates in filenames per D2
     """
     m = re.match(r"PROP-(\d{4}-\d{2}-\d{2})-", proposal_id)
     if m:
@@ -153,9 +162,9 @@ def _extract_date_from_id(proposal_id: str) -> str:
 def load_proposal_corpus(prop_dir: Path = PROP_DIR_DEFAULT) -> list[dict]:
     """Load all PROP-*.json files from the proposals directory.
 
-    -- What: reads and parses every proposal JSON, filtering to PROP-* prefix
+    — What: reads and parses every proposal JSON, filtering to PROP-* prefix
        and pre-cutoff created timestamps
-    -- Why: the migration must only touch proposals created before the safe
+    — Why: the migration must only touch proposals created before the safe
        cutoff (2026-05-07T03:00 CDT) to avoid colliding with concurrent drafts
     """
     proposals = []
@@ -169,8 +178,8 @@ def load_proposal_corpus(prop_dir: Path = PROP_DIR_DEFAULT) -> list[dict]:
                   file=sys.stderr)
             continue
 
-        # -- What: parse created timestamp and check against cutoff
-        # -- Why: proposals at or after cutoff may be concurrently modified
+        # — What: parse created timestamp and check against cutoff
+        # — Why: proposals at or after cutoff may be concurrently modified
         created_str = data.get("created", "")
         if created_str:
             try:
@@ -190,8 +199,8 @@ def load_proposal_corpus(prop_dir: Path = PROP_DIR_DEFAULT) -> list[dict]:
 # Prefix inference engine
 # ============================================================================
 
-# -- What: compiled regex patterns for TITLE-ONLY keyword matching
-# -- Why: D2 inference rules are keyword-driven; scanning title is higher
+# — What: compiled regex patterns for TITLE-ONLY keyword matching
+# — Why: D2 inference rules are keyword-driven; scanning title is higher
 #   signal than recommendation text which often contains incidental keywords
 _BUG_TITLE = re.compile(
     r"\b(fix|bug|fragility|crash|broken|error|dedup)\b",
@@ -229,8 +238,8 @@ _AUD_TITLE = re.compile(
     re.IGNORECASE,
 )
 
-# -- What: manual override map for proposals where automated rules mis-classify
-# -- Why: ~15 proposals have kind/title combinations that defeat keyword
+# — What: manual override map for proposals where automated rules mis-classify
+# — Why: ~15 proposals have kind/title combinations that defeat keyword
 #   heuristics; these were identified by reviewing the dry-run output against
 #   the operator's mental model (e.g. AUD03 "loer lint tools" is infrastructure
 #   tooling = FEAT, not OPS despite "systemd" in recommendation text)
@@ -287,9 +296,9 @@ def infer_prefix(proposal: dict) -> tuple[str, float, str]:
 
     Returns (prefix, confidence, rationale).
 
-    -- What: applies the D2 inference cascade to proposal kind, title,
+    — What: applies the D2 inference cascade to proposal kind, title,
        recommendation, and document_path to determine the best prefix
-    -- Why: the cascade is ordered: manual overrides first, then kind-based
+    — Why: the cascade is ordered: manual overrides first, then kind-based
        rules, then title keyword matching, with fallback to MISC
     """
     prop_id = proposal.get("id", "")
@@ -298,14 +307,14 @@ def infer_prefix(proposal: dict) -> tuple[str, float, str]:
     rec = (proposal.get("recommendation") or "").lower().strip()
     doc_path = (proposal.get("document_path") or "").lower().strip()
 
-    # -- What: check manual override map first
-    # -- Why: ~15 proposals have edge-case kind/title combos that defeat
+    # — What: check manual override map first
+    # — Why: ~15 proposals have edge-case kind/title combos that defeat
     #   keyword heuristics; operator-reviewed overrides take priority
     if prop_id in _MANUAL_OVERRIDES:
         return _MANUAL_OVERRIDES[prop_id]
 
-    # -- What: build title-enriched text for keyword scanning
-    # -- Why: for proposals with empty titles, the slug from id + doc_path
+    # — What: build title-enriched text for keyword scanning
+    # — Why: for proposals with empty titles, the slug from id + doc_path
     #   provides some signal; recommendation text is deprioritized to avoid
     #   incidental keyword matches
     title_text = title or f"{prop_id} {doc_path}"
@@ -376,7 +385,7 @@ def infer_prefix(proposal: dict) -> tuple[str, float, str]:
 
     # ---- Kind + title keyword rules for generic kinds ----
 
-    # -- What: check for BUG indicators in refactor-kind proposals
+    # — What: check for BUG indicators in refactor-kind proposals
     if kind == "refactor" and _BUG_TITLE.search(title_text):
         bug_score = len(_BUG_TITLE.findall(title_text))
         ref_score = len(_REF_TITLE.findall(title_text))
@@ -384,7 +393,7 @@ def infer_prefix(proposal: dict) -> tuple[str, float, str]:
             return ("BUG", 0.80,
                     f"kind=refactor + bug title keywords ({bug_score} hits) -> BUG per D2")
 
-    # -- What: ai_interaction_proposal with parity keywords -> AUD
+    # — What: ai_interaction_proposal with parity keywords -> AUD
     if kind in ("ai_interaction_proposal",):
         if _AUD_TITLE.search(title_text):
             return ("AUD", 0.80,
@@ -392,23 +401,23 @@ def infer_prefix(proposal: dict) -> tuple[str, float, str]:
         return ("FEAT", 0.70,
                 "kind=ai_interaction + no audit keywords -> FEAT")
 
-    # -- What: feature/design with new capability indicators -> FEAT
+    # — What: feature/design with new capability indicators -> FEAT
     if kind in ("feature", "feature_proposal", "design"):
         if _BUG_TITLE.search(title_text) and not _FEAT_TITLE.search(title_text):
             return ("BUG", 0.75,
                     "kind=feature/design but title has bug keywords -> BUG")
         return ("FEAT", 0.85, f"kind={kind} -> FEAT per D2")
 
-    # -- What: refactor without bug keywords -> REF
+    # — What: refactor without bug keywords -> REF
     if kind in ("refactor", "refactor_program_proposal"):
         return ("REF", 0.85, f"kind={kind} -> REF per D2")
 
-    # -- What: infrastructure kinds need title-keyword disambiguation
+    # — What: infrastructure kinds need title-keyword disambiguation
     if kind in ("infrastructure_proposal", "infrastructure_pivot_proposal",
                 "infrastructure_migration_proposal", "memory_architecture_proposal",
                 "integration_proposal"):
-        # -- What: score title keywords per prefix category
-        # -- Why: title is the strongest signal for intent; recommendation
+        # — What: score title keywords per prefix category
+        # — Why: title is the strongest signal for intent; recommendation
         #   text may mention keywords from adjacent concerns
         feat_hits = len(_FEAT_TITLE.findall(title_text))
         ref_hits = len(_REF_TITLE.findall(title_text))
@@ -458,14 +467,14 @@ def infer_prefix(proposal: dict) -> tuple[str, float, str]:
 def generate_new_id(old_id: str, prefix: str) -> str:
     """Generate the new prefix-coded id from the old PROP-* id.
 
-    -- What: produces PREFIX-YYYY-MM-DD-slug-v01 format
-    -- Why: D2 specifies new ids preserve the original date and use a
+    — What: produces PREFIX-YYYY-MM-DD-slug-v01 format
+    — Why: D2 specifies new ids preserve the original date and use a
        human-readable slug; version always starts at v01 for the migration
     """
     date_str = _extract_date_from_id(old_id)
     slug = _slug_from_id(old_id)
 
-    # -- What: ensure slug is non-empty and sanitized
+    # — What: ensure slug is non-empty and sanitized
     if not slug or slug == "unknown":
         slug = old_id.replace("PROP-", "").replace("/", "-").lower()
 
@@ -479,9 +488,9 @@ def generate_new_id(old_id: str, prefix: str) -> str:
 def _build_plan(proposals: list[dict]) -> list[dict]:
     """Build the migration plan from the loaded corpus.
 
-    -- What: iterates all proposals, infers prefix, generates new id, and
+    — What: iterates all proposals, infers prefix, generates new id, and
        collects the plan rows
-    -- Why: the plan is written as a markdown table for operator review
+    — Why: the plan is written as a markdown table for operator review
        before any apply() call
     """
     plan = []
@@ -505,8 +514,8 @@ def _build_plan(proposals: list[dict]) -> list[dict]:
     return plan
 
 
-# -- What: mapping from prefix to the canonical kind string
-# -- Why: the kind field in proposal JSON must align with the new prefix
+# — What: mapping from prefix to the canonical kind string
+# — Why: the kind field in proposal JSON must align with the new prefix
 PREFIX_TO_KIND = {
     "AUD": "audit",
     "BUG": "bug_fix",
@@ -525,17 +534,17 @@ def dry_run(
 ) -> list[dict]:
     """Generate the migration plan and write it as a markdown table.
 
-    -- What: loads corpus, builds plan, writes markdown, returns plan rows
-    -- Why: operator must review the plan before any file modifications;
+    — What: loads corpus, builds plan, writes markdown, returns plan rows
+    — Why: operator must review the plan before any file modifications;
        this is the safety gate per D2
     """
     proposals = load_proposal_corpus(prop_dir)
     plan = _build_plan(proposals)
 
-    # -- What: sort plan by date then legacy_id for readability
+    # — What: sort plan by date then legacy_id for readability
     plan.sort(key=lambda r: r["legacy_id"])
 
-    # -- What: count prefixes and low-confidence entries for summary
+    # — What: count prefixes and low-confidence entries for summary
     prefix_counts = {}
     low_confidence = []
     for row in plan:
@@ -544,7 +553,7 @@ def dry_run(
         if row["confidence"] < 0.75:
             low_confidence.append(row)
 
-    # -- What: write the markdown plan
+    # — What: write the markdown plan
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as out:
         out.write("# AUD84 Migration Plan -- Dry Run\n\n")
@@ -608,10 +617,10 @@ def apply(
 ) -> int:
     """Apply the migration: rename files, update ids, set legacy_id.
 
-    -- What: for each proposal in the plan, atomically renames the file from
+    — What: for each proposal in the plan, atomically renames the file from
        PROP-*.json to PREFIX-*.json, updates the id and kind fields, and
        preserves the original id as legacy_id
-    -- Why: this is the destructive step; only called with --apply flag after
+    — Why: this is the destructive step; only called with --apply flag after
        operator reviews the dry-run plan
 
     Returns the count of migrated proposals.
@@ -625,22 +634,25 @@ def apply(
     for row in plan:
         source_path = Path(row["source_path"])
 
-        # -- What: idempotency check -- skip if file was already migrated
-        # -- Why: re-running on already-migrated corpus should be a no-op
+        # — What: idempotency check -- skip if file was already migrated
+        # — Why: re-running on already-migrated corpus should be a no-op
         if not source_path.exists():
             continue
 
         new_filename = f"{row['new_id']}.json"
         dest_path = source_path.parent / new_filename
 
-        # -- What: skip if destination already exists (already migrated)
+        # — What: skip if destination already exists (already migrated)
         if dest_path.exists():
             _log_action(audit_log_path, row, "skipped", "dest already exists")
             continue
 
-        # -- What: read the original JSON, update fields, write back, then rename
-        # -- Why: writing JSON first ensures the file content is correct before
-        #   the atomic move; shutil.move handles cross-device renames
+        # — What: read the original JSON, update fields, write the migrated copy
+        #   to the DEST name atomically, then remove the source.
+        # — Why: a PROP-*.json under its OLD name must NEVER hold a migrated id — a
+        #   crash there would let a re-run clobber legacy_id (AUD84 D2 provenance
+        #   loss). The dest is committed via temp + os.replace; the source is only
+        #   unlinked once dest exists.
         try:
             with open(source_path, "r", encoding="utf-8") as fh:
                 data = json.load(fh)
@@ -648,21 +660,27 @@ def apply(
             # Preserve mtime
             orig_stat = os.stat(source_path)
 
-            data["legacy_id"] = data["id"]
+            # — What: stamp legacy_id idempotently, then update id/kind.
+            # — Why: setdefault never overwrites an already-migrated legacy_id, so a
+            #   second pass over a half-migrated file keeps the ORIGINAL provenance
+            #   instead of clobbering it with the new id.
+            data.setdefault("legacy_id", data["id"])
             data["id"] = row["new_id"]
             data["kind"] = PREFIX_TO_KIND.get(row["inferred_prefix"],
                                               data.get("kind", ""))
 
-            with open(source_path, "w", encoding="utf-8") as fh:
+            # — What: atomic write-to-dest (temp + os.replace) then unlink source.
+            # — Why: os.replace commits the dest in one step; if we crash before the
+            #   unlink, the dest-exists guard skips this row on re-run and the
+            #   untouched source still carries the original id under its old name.
+            tmp_path = str(dest_path) + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as fh:
                 json.dump(data, fh, indent=2, ensure_ascii=False)
                 fh.write("\n")
+            os.replace(tmp_path, str(dest_path))
+            os.unlink(source_path)
 
-            # -- What: atomic rename via shutil.move
-            # -- Why: shutil.move uses os.rename when possible (same filesystem),
-            #   which is atomic; falls back to copy+delete for cross-device
-            shutil.move(str(source_path), str(dest_path))
-
-            # -- What: restore original mtime on the renamed file
+            # — What: restore original mtime on the renamed file
             os.utime(dest_path, (orig_stat.st_atime, orig_stat.st_mtime))
 
             _log_action(audit_log_path, row, "migrated", "success")
@@ -684,8 +702,8 @@ def _log_action(
 ) -> None:
     """Append a JSONL audit log entry.
 
-    -- What: writes one line per migration action to the audit log
-    -- Why: provides a reversible audit trail per D2 requirements
+    — What: writes one line per migration action to the audit log
+    — Why: provides a reversible audit trail per D2 requirements
     """
     entry = {
         "ts": datetime.now().isoformat(),
@@ -707,8 +725,8 @@ def _log_action(
 def main() -> None:
     """CLI entry point for the migration script.
 
-    -- What: parses --apply flag and dispatches to dry_run or apply
-    -- Why: dry-run is default; --apply is the operator's explicit go-ahead
+    — What: parses --apply flag and dispatches to dry_run or apply
+    — Why: dry-run is default; --apply is the operator's explicit go-ahead
     """
     do_apply = "--apply" in sys.argv
 
@@ -724,15 +742,23 @@ if __name__ == "__main__":
     main()
 
 
-# [Asthenosphere] -- File Metadata
-# Author:     HAP-S (Code Warrior)
-# Project:    Asthenosphere / SAM-IA / SEWE
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.migrations.aud84_prefix_migration
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
 # Version:    1.0.0
-# Updated:    2026-05-07
-# Status:     active
-# Role:       One-time migration script for AUD84 proposal prefix taxonomy
+# Phase:      AUD84 Phase 3 (2026-05-07) — one-time proposal prefix retag migration.
+# Layer:      runtime/migrations (one-shot script; dry-run by default, --apply gated)
+# Role:       reclassifies legacy single-namespace PROP-* proposals into the eight
+#             prefix-coded categories via the D2 cascade, then renames files + rewrites
+#             ids/kind; dry-run writes a review plan, --apply does the crash-safe moves.
 # Stability:  experimental (first run, operator-gated)
-# ErrorModel: exceptions logged to audit JSONL; skips on error, continues
-# Depends:    json, pathlib, shutil, re, datetime, os, sys (all stdlib)
-# Exposes:    load_proposal_corpus, infer_prefix, generate_new_id, dry_run, apply
-# Lines:      ~370
+# ErrorModel: per-proposal exceptions are logged to the audit JSONL and the loop
+#             continues (one bad file never aborts the batch); dry_run never writes
+#             proposal files; the per-row apply path is crash-safe — migrated JSON is
+#             committed to the DEST via temp + os.replace and the source is unlinked
+#             only after, and legacy_id is stamped with setdefault (idempotent re-run).
+# Depends:    json, os, re, shutil, sys, datetime, pathlib (all stdlib).
+# Exposes:    load_proposal_corpus, infer_prefix, generate_new_id, dry_run, apply.
+# Lines:      761
+# --------------------------------------------------------------------------

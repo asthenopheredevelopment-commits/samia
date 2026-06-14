@@ -1,4 +1,4 @@
-"""Tests for the Tier-2 merge consumer P3 — salience guard (FEAT-2026-06-07).
+"""samia.core.test_merge_consumer_p3 — tests for the Tier-2 merge consumer P3 salience guard (FEAT-2026-06-07).
 
 Layer 1 (Owns / Depends):
     Owns:    unit tests for the P3 SALIENCE GUARD consumed in TWO places:
@@ -391,3 +391,26 @@ class TestOnlineSupersedeSalienceGuard(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_merge_consumer_p3
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 Tier-2 merge consumer P3 (salience guard)
+# Layer:      test (pytest)
+# Role:       tests for the P3 salience guard in two consumers — the merge
+#             consumer surfaces a distinct high-salience pair as 'guarded' (no
+#             auto-abstraction) while a true duplicate stays exempt and a
+#             low/absent-salience pair is unchanged; the contradiction passive
+#             sweep + online supersede surface a high-salience loser instead of
+#             removing it, reversibility intact.
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.merge_consumer, samia.core.bio,
+#             samia.core.ia, samia.core.frontmatter, samia.core.mcp_server,
+#             samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      418
+# --------------------------------------------------------------------------

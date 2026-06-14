@@ -1,40 +1,38 @@
 """samia.core.spine_cord -- Verified-outcome capture: cord schema + per-zone adapters.
 
-What: Defines the OutcomeRecord (the cord) -- the canonical schema for all
-      verified outcome records across the Asthenosphere. Provides a hierarchical
-      intent taxonomy with agnostic parents and specialized children, per-zone
-      emit adapters (sovereign, samia, harness), and a flat 'outcome' field
-      derivation that preserves backward compatibility with opencode_drain.
+Layer 1 (Owns / Depends):
+    Owns:    OutcomeRecord (the cord dataclass), AGNOSTIC_INTENTS.
+             build_outcome_record(...) -> OutcomeRecord (validated factory).
+             serialize_record(rec) -> dict (JSON-serializable, flat 'outcome').
+             parse_record(data) -> OutcomeRecord (inverse).
+             agnostic_parent(intent) -> str (taxonomy roll-up).
+             emit_outcome(rec, zone, **kw) -> None (dispatcher) and the three
+                 per-zone adapters: emit_sovereign (3-sink: JSONL + SAM outbox +
+                 rw log), emit_samia (direct spine write + rw log), emit_harness
+                 (harness outbox only).
+    Depends: json, logging, re, hashlib, dataclasses, datetime, pathlib, typing
+             (stdlib). Late-imports (per adapter): samia.core.frontmatter
+             (emit_samia spine write) and samia.core.runtime_warrior
+             (emit_sovereign + emit_samia rw log).
 
-Why:  Before this module, each emitter (bounty_workflow, future daemon sources,
-      future harness sources) would independently construct ad-hoc record dicts
-      with inconsistent field sets. The cord schema normalizes all outcomes into
-      a single structure that the reasoning spine, phrasing transducer, and storm
-      learner can consume uniformly. The flat 'outcome' field is CRITICAL: the
-      drain (opencode_drain.py:136) identifies outcome records by checking for
-      this key's presence and derives target_state/material_grade from its value.
-
-Architecture:
-  - OutcomeRecord: dataclass holding intent, source_kind, operational,
-    domain_verdict, vertebra_id (future), specialized_payload (future),
-    and carried context fields.
-  - Intent taxonomy: agnostic parents (fix, feature, refactor, test,
-    documentation, optimization, general) + specialized children that
-    roll up via agnostic_parent().
-  - Per-zone adapters: emit_sovereign (3-sink: outbox + JSONL + rw log),
-    emit_samia (spine node + rw log), emit_harness (outbox only).
-  - Flat 'outcome' derivation: domain_verdict.status when present,
-    operational.status mapped to failure otherwise.
-
-Public API:
-  build_outcome_record(...)     -> OutcomeRecord
-  serialize_record(rec)         -> dict   (JSON-serializable, flat 'outcome')
-  parse_record(data)            -> OutcomeRecord
-  agnostic_parent(intent)       -> str
-  emit_outcome(rec, zone, ...) -> None   (dispatches to per-zone adapter)
-  emit_sovereign(rec, ...)      -> None
-  emit_samia(rec, ...)          -> None   [Phase 2+]
-  emit_harness(rec, ...)        -> None   [Phase 2+]
+Layer 2 (What / Why):
+    What: OutcomeRecord is the canonical schema for a verified outcome from any
+          zone. Intents form a hierarchy — agnostic parents (fix, feature,
+          refactor, test, documentation, optimization, general) plus specialized
+          children that roll up via agnostic_parent(). serialize_record derives a
+          flat top-level 'outcome' (domain_verdict.status when present, else
+          operational.status mapped to success/failure). Each zone has its own
+          emit adapter; emit_outcome routes to the right one by zone string.
+    Why:  before this module each emitter (bounty_workflow, future daemon /
+          harness sources) built ad-hoc record dicts with inconsistent fields.
+          One schema lets the reasoning spine, phrasing transducer, and storm
+          learner consume outcomes uniformly. The flat 'outcome' field is
+          CRITICAL: opencode_drain.py:136 identifies outcome records by this
+          key's presence and derives target_state/material_grade from its value
+          (lines 167-176), so nesting it under domain_verdict would break the
+          drain. The zone split enforces the single-writer containment boundary:
+          sovereign/harness write only to an outbox, the drain materializes spine
+          nodes; only the in-daemon samia zone writes the spine directly.
 """
 
 from __future__ import annotations
@@ -746,8 +744,16 @@ def emit_outcome(
 
 # ---------------------------------------------------------------------------
 # [Asthenosphere] samia.core.spine_cord
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-verified-outcome-capture-architecture-wide (Phase 2 adapters)
 # Layer:      core (pure library, no daemon dependency)
+# Role:       verified-outcome capture cord -- the OutcomeRecord schema + intent
+#             taxonomy roll-up, the drain-critical flat-'outcome' serializer/parser,
+#             and three per-zone emit adapters (sovereign 3-sink outbox, samia direct
+#             spine write, harness outbox-only) routed by emit_outcome, preserving the
+#             single-writer containment boundary.
 # Stability:  v2.0.0
 # ErrorModel: build_outcome_record raises ValueError on malformed input;
 #             emit_sovereign is fire-and-forget per sink (failure in one does
@@ -760,4 +766,5 @@ def emit_outcome(
 # Exposes:    OutcomeRecord, build_outcome_record, serialize_record,
 #             parse_record, agnostic_parent, AGNOSTIC_INTENTS,
 #             emit_outcome, emit_sovereign, emit_samia, emit_harness.
+# Lines:      767
 # ---------------------------------------------------------------------------

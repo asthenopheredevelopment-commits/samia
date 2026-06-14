@@ -1,27 +1,39 @@
 """samia.core.auditor — Tier 2a of the permission gating system.
 
-Reads the PreToolUse/PostToolUse decision logs, joins them by
-tool_use_id, enriches with isSidechain by reading the parent's
-transcript JSONL, and appends to the persistent confidence ledger.
+Layer 1 (Owns / Depends):
+    Owns:    run_audit — drain new pre/post log entries, pair by tool_use_id,
+                 append observation rows to the confidence ledger.
+             judge_novel_patterns — escalate ledger patterns with no authoritative
+                 verdict to the local-LLM judge (Tier 2b), rate-limited per tick.
+             auditor_tick — the 15-min-gated idle-pulse subscriber wrapping both.
+             AUDITOR_INTERVAL_S, JUDGE_MAX_PER_TICK — cadence + rate-limit.
+    Depends: stdlib only (json, re, datetime, pathlib, typing). samia.core.judge
+             (imported LAZILY inside judge_novel_patterns, escalation path only).
+Layer 2 (What / Why):
+    What: this is the OBSERVATION layer of the permission gate. run_audit reads two
+          append-only JSONL logs (PreToolUse payloads + PostToolUse outcomes),
+          joins them on tool_use_id, enriches each with isSidechain (parsed from
+          the parent transcript), and writes one ledger row per pre-entry recording
+          {pattern, decision, agent class}. judge_novel_patterns then finds ledger
+          patterns that NO authority (user/auditor/claude/local_llm) has ruled on
+          and asks samia.core.judge for a verdict, appending it as a 'local_llm'
+          row. auditor_tick gates the pair behind a 15-minute state-file cooldown.
+    Why:  it RECORDS, it does not DECIDE — a later scoring pass computes per-pattern
+          confidence weighted by who decided (operator > auditor > claude > LLM), so
+          the auditor's job is faithful, cheap, crash-proof capture. Byte-offset
+          cursors make each run drain only NEW log bytes (the logs grow unbounded);
+          malformed lines are skipped, not fatal; transcript reads are capped to the
+          last 256 KB so cost stays bounded on a huge session. The local-LLM
+          escalation is rate-limited so a backlog of novel patterns can't burn
+          N×cold-start seconds in one tick.
 
-This is the *observation* layer — it doesn't make decisions; it
-records what happened so a future scoring pass can compute
-per-pattern confidence weighted by tier (user/auditor/claude/local_llm).
-
-Files used (under memory_dir):
-  Reads:
-    .subagent_payload_probe.jsonl   (PreToolUse)
-    .subagent_outcomes.jsonl        (PostToolUse, paired by tool_use_id)
-    transcript JSONL referenced from each payload (for isSidechain)
-  Writes:
-    .confidence_ledger.jsonl   (append-only)
-    .audit_state.json          (last-processed cursors per log)
-
-Public API (parameterized on memory_dir):
-  run_audit(memory_dir) → dict
-  auditor_tick(memory_dir, force=False) → dict   (idle-pulse subscriber)
-
-Cadence: 15 min via idle pulse (the 6h-style state-file gate).
+Layer 3 (Changelog):
+    Files used (under memory_dir):
+      Reads:  .subagent_payload_probe.jsonl (PreToolUse),
+              .subagent_outcomes.jsonl (PostToolUse, paired by tool_use_id),
+              the transcript JSONL referenced from each payload (for isSidechain).
+      Writes: .confidence_ledger.jsonl (append-only),
+              .audit_state.json / .auditor_tick_state.json (cursors + cooldown).
 """
 from __future__ import annotations
 
@@ -73,6 +85,9 @@ def _lookup_sidechain(transcript_path: Optional[str],
     p = Path(transcript_path)
     if not p.exists():
         return None
+    # TailScan — What: read only the last 256 KB of the transcript, find the line whose
+    #     tool_use content block id matches tool_use_id, and return its envelope's
+    #     isSidechain; None if no matching entry is found.
     try:
         sz = p.stat().st_size
         with p.open("r", encoding="utf-8", errors="replace") as f:
@@ -100,6 +115,10 @@ def _lookup_sidechain(transcript_path: Optional[str],
         return None
     except OSError:
         return None
+# _lookup_sidechain — Why: a sub-agent (sidechain) call carries different trust than a
+#     parent call, so the ledger needs that bit — but a transcript can be huge, so the
+#     scan is tail-bounded (recent calls dominate) and seeks past the first partial line
+#     so a mid-line seek can't yield a corrupt JSON parse.
 
 
 _BASH_FIRST_TOKENS = re.compile(r"^\s*([\w./-]+(?:\s+[\w./-]+){0,2})")
@@ -111,9 +130,11 @@ def _pattern_signature(tool_name: str, tool_input: dict) -> str:
         return tool_name or "?"
     if tool_name in ("Edit", "Write", "Read", "NotebookEdit"):
         path = str(tool_input.get("file_path", ""))
-        # Glob common project roots so multiple files under the same root
-        # collapse to one pattern. Roots derive from the user's home so the
-        # signature logic carries to any box (order matters: most-specific first).
+        # RootGlob — What: collapse a file path to its project-root glob (e.g.
+        #     "Edit(~/Asthenosphere/**)") so many files under one root share a signature;
+        #     fall back to a 60-char path prefix when no known root matches.
+        # Roots derive from the user's home so the signature logic carries to any
+        # box (order matters: most-specific first).
         _home = str(Path.home())
         for root in (f"{_home}/Asthenosphere",
                      f"{_home}/Desktop/DinnerBell-BBQ-Dev",
@@ -122,6 +143,10 @@ def _pattern_signature(tool_name: str, tool_input: dict) -> str:
             if path.startswith(root):
                 return f"{tool_name}({root}/**)"
         return f"{tool_name}({path[:60]})"
+        # RootGlob — Why: confidence accrues per PATTERN, not per file — a thousand edits
+        #     under ~/Asthenosphere must aggregate into one learnable signature, so the
+        #     glob is the unit a verdict generalizes over. Most-specific-first ordering
+        #     keeps a nested root (DinnerBell under Desktop) from being swallowed by Desktop.
     if tool_name == "Bash":
         cmd = str(tool_input.get("command", ""))
         m = _BASH_FIRST_TOKENS.match(cmd)
@@ -142,10 +167,16 @@ def _outcome_decision(outcome: dict) -> tuple[str, Optional[str]]:
         if resp.get("isError") or resp.get("is_error"):
             err = resp.get("content") or resp.get("error") or "(error)"
             err_str = str(err) if not isinstance(err, str) else err
+            # PermissionVsError — What: an error whose text mentions "Permission" is a
+            #     DENY (the gate blocked it); any other error is a plain runtime "error".
             return ("deny", err_str[:200]) if "Permission" in err_str else ("error", err_str[:200])
     if outcome.get("error"):
         return "error", str(outcome["error"])[:200]
     return "allow", None
+# _outcome_decision — Why: the ledger must distinguish "the gate denied this" (a signal
+#     about the PATTERN's safety) from "the tool ran but errored" (a signal about the
+#     ENVIRONMENT) — only the former should teach the confidence model, hence the
+#     Permission-substring discriminator on the error text.
 
 
 def run_audit(memory_dir: Path) -> dict:
@@ -172,7 +203,9 @@ def run_audit(memory_dir: Path) -> dict:
     pre_entries, new_pre_off = _safe_load_jsonl_after(pre_path, pre_off)
     post_entries, new_post_off = _safe_load_jsonl_after(post_path, post_off)
 
-    # Index post by tool_use_id (and remember unmatched for next pass)
+    # PairByTUID — What: index PostToolUse entries by tool_use_id, then walk the
+    #     PreToolUse entries and join each to its outcome, emitting one ledger row per
+    #     pre (decision='pending' when no matching post arrived this drain).
     post_by_tuid: dict[str, dict] = {}
     for p in post_entries:
         o = p.get("outcome") if isinstance(p, dict) else None
@@ -215,6 +248,10 @@ def run_audit(memory_dir: Path) -> dict:
         with ledger_path.open("a", encoding="utf-8") as f:
             for r in new_rows:
                 f.write(json.dumps(r, separators=(",", ":")) + "\n")
+    # PairByTUID — Why: cursors advance to the new offsets unconditionally, so an
+    #     unpaired pre (post hasn't landed yet) is recorded once as 'pending' and not
+    #     re-read — accepted v1 loss; the post log catches up fast, so a missed pairing
+    #     is rare and self-healing as the two logs converge.
 
     state["pre_offset"] = new_pre_off
     state["post_offset"] = new_post_off
@@ -249,6 +286,9 @@ def judge_novel_patterns(memory_dir: Path, max_calls: int = JUDGE_MAX_PER_TICK) 
     if not ledger.exists():
         return {"judged": 0, "novel": 0}
 
+    # NovelScan — What: split the ledger's patterns into `decided` (any row whose
+    #     decided_by is an authority) and `pending` (a sample row per as-yet-unjudged
+    #     pattern); a pattern is NOVEL iff it is in pending but not decided.
     # Read all ledger rows; collect patterns that already have an authoritative
     # decision (decided_by != system-observation), and patterns that don't.
     decided: set[str] = set()
@@ -277,6 +317,9 @@ def judge_novel_patterns(memory_dir: Path, max_calls: int = JUDGE_MAX_PER_TICK) 
     novel_patterns = [(p, r) for p, r in pending.items() if p not in decided]
     if not novel_patterns:
         return {"judged": 0, "novel": 0}
+    # NovelScan — Why: an authoritative verdict (user/auditor/claude/local_llm) makes a
+    #     pattern settled, so it must NOT be re-judged — only the genuinely-unruled
+    #     remainder is sent to the LLM, which keeps the escalation idempotent across ticks.
 
     # Rate-limit
     todo = novel_patterns[:max_calls]
@@ -336,12 +379,18 @@ def auditor_tick(memory_dir: Path, force: bool = False) -> dict:
             state = json.loads(state_path.read_text(encoding="utf-8"))
         except Exception:
             state = {}
+    # CooldownGate — What: no-op unless force=True or AUDITOR_INTERVAL_S has elapsed
+    #     since the last tick (read from the state file); otherwise run audit + judge.
     last_unix = float(state.get("last_tick_unix", 0))
     now = _time.time()
     elapsed = now - last_unix
     if not force and elapsed < AUDITOR_INTERVAL_S:
         return {"fired": False, "elapsed_seconds": int(elapsed),
                 "interval_seconds": AUDITOR_INTERVAL_S}
+    # CooldownGate — Why: the idle pulse can fire this on every tool call, so the
+    #     state-file interval throttles the actual work to ~15 min — the audit/judge cost
+    #     (esp. the local-LLM calls) must not run per keystroke. A fresh store (last=0)
+    #     has a huge elapsed, so the first call always fires.
 
     audit_out = run_audit(memory_dir)
     judge_out = judge_novel_patterns(memory_dir)
@@ -357,3 +406,27 @@ def auditor_tick(memory_dir: Path, force: bool = False) -> dict:
         "audit": audit_out,
         "judge": judge_out,
     }
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.auditor
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Tier 2a permission-gate observation layer + Tier 2b escalation.
+# Layer:      core (library; idle-pulse subscriber via auditor_tick).
+# Role:       permission-gate OBSERVATION layer — drain + pair pre/post tool logs into the
+#             confidence ledger (Tier 2a), escalate unruled patterns to the local-LLM judge
+#             (Tier 2b), gated to ~15-min ticks; records, never decides.
+# Stability:  stable -- observation/escalation; does not itself gate calls.
+# ErrorModel: malformed JSONL lines are skipped (never fatal); a missing log /
+#             transcript / ledger fails soft to empty results; an OSError on the
+#             ledger read returns an error-tagged telemetry dict; a judge call that
+#             raises is caught and recorded as an 'unsure'/'none' row. Byte-offset
+#             cursors drain only new bytes; transcript scan is tail-capped at 256 KB.
+# Depends:    json, re, datetime, pathlib, typing (stdlib).
+#             samia.core.judge (LAZY, judge_novel_patterns only).
+# Exposes:    run_audit, judge_novel_patterns, auditor_tick,
+#             AUDITOR_INTERVAL_S, JUDGE_MAX_PER_TICK.
+# Lines:      429
+# --------------------------------------------------------------------------

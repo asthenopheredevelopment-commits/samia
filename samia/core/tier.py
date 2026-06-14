@@ -1,5 +1,17 @@
 """samia.core.tier — relevance decay + tier classification.
 
+Layer 1 (Owns / Depends):
+    Owns:    tier_for, step_relevance, decay_pass, decay_tick (+ the
+             TIER_THRESHOLDS / DECAY_RATE / NEUTRAL constants).
+    Depends: stdlib (datetime, pathlib). samia.core.frontmatter; samia.core.ia
+             (optional, auto_freeze); samia.core.timestamp.
+Layer 2 (What / Why):
+    What: relevance decay + tier classification — step_relevance is the pure
+          math; decay_pass / decay_tick walk nodes/ and apply it on the daemon's
+          continuous schedule.
+    Why:  memory must forget continuously, so tiering + relevance decay is the
+          forgetting axis (distinct from the content-integrity decay axis).
+
 Carved from memory_session_boot.py. Holds the two pieces that the future
 runtime daemon's `tier_decay_tick` job (see design doc §1.3) calls on its 6h
 schedule, and that hooks/scripts call ad-hoc.
@@ -40,7 +52,7 @@ TIER_THRESHOLDS = [("hot", 0.75), ("warm", 0.50), ("cold", 0.25), ("frozen", 0.0
 TIER_DECAY_INTERVAL_S = 6 * 3600   # 6h cooldown for the idle-pulse subscriber
 
 # ── Salience-aware decay (FEAT-2026-06-07 Tier-1 P5, D6 effect ii) ──────────
-# SALIENCE_DECAY_DAMPING -- What: the maximum fraction by which a node's
+# SALIENCE_DECAY_DAMPING — What: the maximum fraction by which a node's
 #   per-step relevance decrement is REDUCED at full salience (1.0). The
 #   effective decay rate becomes rate * (1 - SALIENCE_DECAY_DAMPING * salience),
 #   so salience 0 -> rate unchanged (backward-compatible) and salience 1.0 ->
@@ -57,7 +69,7 @@ TIER_DECAY_INTERVAL_S = 6 * 3600   # 6h cooldown for the idle-pulse subscriber
 #   approved proposal) — P5 only makes the EXISTING relevance decay salience-aware.
 SALIENCE_DECAY_DAMPING = 0.9
 
-# SALIENCE_FREEZE_EXEMPT -- What: the salience at/above which a node is EXEMPT
+# SALIENCE_FREEZE_EXEMPT — What: the salience at/above which a node is EXEMPT
 #   from the decay_pass auto-freeze/eviction (it stays resident in nodes/).
 # Why: D6 effect (ii) — an emotionally-charged / operator-tagged one-shot must
 #   persist through the forgetting curve that would otherwise auto-freeze a
@@ -68,7 +80,7 @@ SALIENCE_DECAY_DAMPING = 0.9
 SALIENCE_FREEZE_EXEMPT = 0.85
 
 # ── STC tagging-and-capture decay (FEAT-2026-06-11 temporal-recall P4, §6.5 effect 3) ──
-# STC_DECAY_DAMPING -- What: STC's weight in the COMBINED step_relevance damping term.
+# STC_DECAY_DAMPING — What: STC's weight in the COMBINED step_relevance damping term.
 #   The salience and STC contributions SUM into one capped damping factor on the
 #   decrement (additive-then-capped), NOT two stacked multipliers (which could zero the
 #   decrement and immortalize a node — the exact failure §6.5 warns against).
@@ -79,7 +91,7 @@ SALIENCE_FREEZE_EXEMPT = 0.85
 #   salience-only -> decay byte-identical to today (the identity-at-zero property).
 STC_DECAY_DAMPING = 0.5
 
-# DAMP_CAP -- What: the floor-protecting cap on the COMBINED (salience+STC) damping so
+# DAMP_CAP — What: the floor-protecting cap on the COMBINED (salience+STC) damping so
 #   the decrement is never driven to zero (a node always decays at >= 1-DAMP_CAP of rate).
 # Why: §6.5 — even a fully-salient, fully-captured node must still decay (>= 5% of rate
 #   at 0.95), never frozen. The cap is what makes the additive composition safe: salience
@@ -482,6 +494,9 @@ def decay_tick(memory_dir: Path, force: bool = False,
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.core.tier
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD15 (original refactor) + AUD61 Phase 3 (target_state skip)
 #             + AUD63 Phase 3 (UTC timestamp fix in decay_tick)
 #             + 2026-06-07 operator correction: decay is CONTINUOUS (wake+REM),
@@ -521,6 +536,9 @@ def decay_tick(memory_dir: Path, force: bool = False,
 #               flags are INDEPENDENT (decay-without-freeze erodes but never freezes).
 #               The relevance/lifecycle decay is UNAFFECTED by either flag.
 # Layer:      core (pure library, no daemon dependency)
+# Role:       relevance-decay + tier classification — the salience/STC-damped
+#             forgetting curve (step_relevance), the nodes/ decay walk + auto-freeze
+#             (decay_pass), and the 6h idle-pulse decay subscriber (decay_tick).
 # Stability:  v1.1 -- AUD61 target_state integration, AUD63 UTC fix
 # ErrorModel: decay_pass skips malformed nodes (no frontmatter -> continue);
 #             auto_freeze is deferred to end of walk to avoid mid-iteration
@@ -530,5 +548,5 @@ def decay_tick(memory_dir: Path, force: bool = False,
 #             samia.core.timestamp (AUD63, for decay_tick UTC).
 # Exposes:    TIER_THRESHOLDS, DECAY_RATE, NEUTRAL, DECAY_RATE_BY_GRADE,
 #             tier_for, step_relevance, decay_pass, decay_tick.
-# Lines:      ~250
+# Lines:      537
 # --------------------------------------------------------------------------

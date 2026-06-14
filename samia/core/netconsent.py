@@ -44,24 +44,24 @@ from __future__ import annotations
 import os
 import sys
 
-# AUTOFETCH_ENV -- What: the single env knob governing every download.
-# AUTOFETCH_ENV -- Why: one name across the whole engine (the gguf fetcher and
+# AUTOFETCH_ENV — What: the single env knob governing every download.
+# AUTOFETCH_ENV — Why: one name across the whole engine (the gguf fetcher and
 #     the MiniLM embedder share it) so the operator has ONE lever: set it on for
 #     standing consent / CI, set it off as a kill switch, or leave it unset for
 #     the ask-if-interactive default. Same name model_fetch historically used,
 #     so existing operator/kit settings keep working.
 AUTOFETCH_ENV = "ASTHENOS_MODEL_AUTOFETCH"
 
-# _OFF_VALUES / _ON_VALUES -- What: the recognized explicit env tokens.
-# _OFF_VALUES / _ON_VALUES -- Why: case-insensitive, whitespace-stripped. Any
+# _OFF_VALUES / _ON_VALUES — What: the recognized explicit env tokens.
+# _OFF_VALUES / _ON_VALUES — Why: case-insensitive, whitespace-stripped. Any
 #     other present-but-unrecognized value is treated as NOT an explicit signal
 #     (falls through to the ask-if-tty default) rather than guessed at -- we only
 #     act on consent we can read unambiguously.
 _OFF_VALUES = frozenset({"0", "false", "no", "off"})
 _ON_VALUES = frozenset({"1", "true", "yes", "on"})
 
-# _YES_REPLIES -- What: the interactive replies that authorize a download.
-# _YES_REPLIES -- Why: explicit-yes only; the prompt default is No, so anything
+# _YES_REPLIES — What: the interactive replies that authorize a download.
+# _YES_REPLIES — Why: explicit-yes only; the prompt default is No, so anything
 #     that is not a clear yes (including EOF/empty) refuses.
 _YES_REPLIES = frozenset({"y", "yes"})
 
@@ -202,13 +202,25 @@ def consent(
 
 
 # ─────────────────────────────────────────────
-# [netconsent] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-12  Status: active
+# [Asthenosphere] samia.core.netconsent
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      SEC-2026-06-12 — extracted the autofetch gate into a core-plane
+#             consent protocol (ask-if-tty / standing-env / kill-switch);
+#             replaces model_fetch._autofetch_enabled for the consent decision
+# Layer:      core (pure library, no daemon dependency)
 # Role:       single owner of the download-consent gate for the SAM/IA engine
 #             (kill-switch / standing-env-consent / ask-if-interactive default)
-# Depends:    os, sys (stdlib only); NO samia.runtime import (core-plane safe)
-# Gate:       ASTHENOS_MODEL_AUTOFETCH -- off=refuse, on=standing consent,
-#             unset=ask-if-tty-else-refuse. License notice ALWAYS prints first.
-# Callers:    samia.runtime.model_fetch.fetch_model, samia.core.vector._ensure_model
-# ─────────────────────────────────────────────
+# Stability:  stable — the v1-release consent semantics; gate name is frozen so
+#             existing operator/CI settings keep working
+# ErrorModel: never raises on a consent decision — returns bool; EOF/non-tty/
+#             unrecognized-env all fail to refuse (False), and the license notice
+#             ALWAYS prints to stderr first. Gate: ASTHENOS_MODEL_AUTOFETCH --
+#             off=refuse, on=standing consent, unset=ask-if-tty-else-refuse
+# Depends:    os, sys (stdlib only); NO third-party, NO samia.runtime import
+#             (core-plane safe so core/vector.py can gate its HF download)
+# Exposes:    consent, env_explicit_off, env_explicit_on, AUTOFETCH_ENV
+#             (callers: runtime.model_fetch.fetch_model, core.vector._ensure_model)
+# Lines:      223
+# --------------------------------------------------------------------------

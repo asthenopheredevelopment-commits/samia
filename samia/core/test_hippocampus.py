@@ -1,4 +1,4 @@
-"""Tests for samia.core.hippocampus — FEAT-2026-06-07 Tier-1 P1 (engram) + P2 (ring) + P3 (lattice) + P4 (inject) + P5 (feed-forward).
+"""samia.core.test_hippocampus — tests for samia.core.hippocampus (FEAT-2026-06-07 Tier-1 P1 engram + P2 ring + P3 lattice + P4 inject + P5 feed-forward).
 
 P5 additions (this file): the feed-forward Q6a check — ring-RAG and engram-RAG hits
 each feed a GENUINE co-activation into Tier-0 at the memory_search seam (captured
@@ -1164,3 +1164,18 @@ class TestInjectStaysSilentUnderP5(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_hippocampus
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 Tier-1 P1 engram + P2 ring + P3 lattice + P4 inject + P5 feed-forward
+# Layer:      test (pytest)
+# Role:       tests for samia.core.hippocampus (+ vector, mcp_server) — engram held-copy durability/RAG, ring pointer/LRU/dangling, kWTA + promotion lattice eligibility, inject layers/budget/co-activation-silence, all-RAG genuine feed-forward
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.hippocampus, samia.core.vector, samia.core.mcp_server, samia.core.bio, samia.core.frontmatter
+# Exposes:    — (test module)
+# Lines:      1183
+# ------------------------------------------------------------------------------

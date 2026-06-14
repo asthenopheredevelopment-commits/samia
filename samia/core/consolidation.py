@@ -1,29 +1,31 @@
 """samia.core.consolidation — find merge candidates in SAM chains.
 
-Carved from memory_consolidation_detector.py. Per design doc §1.1 + §1.3,
-the daemon's consolidation job calls audit_all() on a schedule; the result
-feeds .consolidation_candidates.json which MEMORY.md surfaces.
+Layer 1 (Owns / Depends):
+    Owns:    audit_all(memory_dir, threshold, chain=None) -> list[dict] — the top-level
+                 sweep, sorted descending by similarity, EPISODIC chains only.
+             audit_chain(chain_path, threshold, memory_dir) -> list[dict] — pairwise
+                 similarity within one chain's members.
+             surface(memory_dir, findings, threshold) -> Path — writes
+                 .consolidation_candidates.json.
+             strip_frontmatter, shingles, jaccard, load_chain, load_node_body — the
+                 similarity-model primitives.
+    Depends: stdlib only (json, re, datetime, pathlib, typing).
+Layer 2 (What / Why):
+    What: audit_all globs chains/, SKIPS fact-extract atom mini-chains (fx_* / all
+          type:semantic members) via _is_atom_minichain, and for each remaining chain
+          collects member pairs whose content-word Jaccard meets `threshold`; surface()
+          serializes the ranked findings for the Tier-2 merge consumer to drain.
+    Why:  the daemon's consolidation job (design doc §1.1 + §1.3) calls audit_all() on a
+          schedule; .consolidation_candidates.json is what MEMORY.md surfaces. The
+          similarity model is preserved EXACTLY — content-word Jaccard, same stopword
+          list, 3-char minimum (word-shingles gave a 0.01 noise floor; content-word
+          overlap gives a 0.05-0.25 topical band; 0.15 = the empirical knee). The atom
+          mini-chain exclusion (BUG-2026-06-11) breaks a self-feeding surfacer loop.
 
-Public API:
-  strip_frontmatter(text)             → str
-  shingles(text)                      → set[str]   (content-words)
-  jaccard(a, b)                       → float
-  load_chain(chain_path)              → dict
-  load_node_body(memory_dir, rel)     → str | None
-  audit_chain(chain_path, threshold,
-              memory_dir)             → list[dict]
-  audit_all(memory_dir, threshold,
-            chain=None)               → list[dict]   (sorted desc by sim)
-  surface(memory_dir, findings,
-          threshold)                  → Path         (.consolidation_candidates.json)
-
-Acceptance: byte-identical to pre-refactor memory_consolidation_detector.py
-CLI output on the same memory tree (design doc §8.1).
-
-Note: similarity model preserved exactly — content-word Jaccard with the
-same stopword list and 3-char minimum. Word-shingles produced 0.01 noise
-floor on real prose; content-word overlap gives 0.05–0.25 band for topical
-adjacency. Threshold default 0.15 = empirical knee.
+Layer 3 (Changelog):
+    Carved from memory_consolidation_detector.py — byte-identical CLI output on the
+    same tree (design doc §8.1).
+    BUG-2026-06-11: audit_all now skips fx_* / all-type:semantic atom mini-chains.
 """
 
 from __future__ import annotations
@@ -52,7 +54,7 @@ _STOPWORDS = {
 
 _MIN_WORD_LEN = 3
 
-# _FX_CHAIN_PREFIX -- What: the filename/chain_id prefix of the fact-extract
+# _FX_CHAIN_PREFIX — What: the filename/chain_id prefix of the fact-extract
 #   mini-chains (chains/fx_<source-stem>.json, members are sem_* type:semantic
 #   atoms). Why: BUG-2026-06-11 runaway loop (surfacer side) — this surfacer was
 #   built for EPISODIC chains, but it now also sweeps the fx_* atom mini-chains,
@@ -62,7 +64,7 @@ _MIN_WORD_LEN = 3
 #   EPISODIC consolidation, so it must SKIP fx_* chains.
 _FX_CHAIN_PREFIX = "fx_"
 
-# _TYPE_RE -- What: matches a `type: <value>` frontmatter line. Why: the secondary
+# _TYPE_RE — What: matches a `type: <value>` frontmatter line. Why: the secondary
 #   (belt) exclusion check — a chain whose members all resolve to type:semantic is
 #   an atom mini-chain regardless of its filename, so it is excluded too.
 _TYPE_RE = re.compile(r"^type:\s*(\S+)\s*$", re.MULTILINE)
@@ -155,6 +157,8 @@ def audit_chain(chain_path: Path, threshold: float,
             continue
         bodies.append((m["addr"], m["file"], shingles(body)))
 
+    # PairScan — What: score every unordered member pair (i < j) and keep those whose
+    #     content-word Jaccard >= threshold.
     findings: list[dict] = []
     for i in range(len(bodies)):
         for j in range(i + 1, len(bodies)):
@@ -169,6 +173,8 @@ def audit_chain(chain_path: Path, threshold: float,
                     "similarity": round(sim, 3),
                 })
     return findings
+# PairScan — Why: chains are small (a handful of members), so the O(n^2) pair scan is
+#     cheap; the upper-triangle iteration avoids scoring a pair twice and self-pairs.
 
 
 def audit_all(memory_dir: Path, threshold: float = DEFAULT_THRESHOLD,
@@ -204,21 +210,31 @@ def surface(memory_dir: Path, findings: list[dict], threshold: float) -> Path:
     return surface_file
 
 
-# ─────────────────────────────────────────────
-# [consolidation] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.1.0  Updated: 2026-06-11  Status: active
-# Role:       find merge candidates in SAM chains — content-word Jaccard over
-#             chain-member pairs; surface .consolidation_candidates.json for the
-#             Tier-2 merge consumer's drain. EPISODIC chains only.
-# Change:     BUG-2026-06-11 runaway loop (surfacer side) — audit_all now SKIPS the
-#             fact-extract atom mini-chains (fx_* filename / all-type:semantic
-#             members) via _is_atom_minichain. The surfacer was built for episodic
-#             chains; sweeping the fx_* atom chains closed a self-feeding loop
-#             (atoms -> fx mini-chains -> surfacer -> merge_abstract -> fact
-#             re-extraction). The contradiction detector covers atom near-dups.
-# Depends:    stdlib only (json, re, datetime, pathlib).
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.consolidation
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Carved from memory_consolidation_detector.py
+#             + BUG-2026-06-11 runaway loop (surfacer side): audit_all now SKIPS
+#               the fact-extract atom mini-chains (fx_* filename / all-type:semantic
+#               members) via _is_atom_minichain. The surfacer was built for episodic
+#               chains; sweeping the fx_* atom chains closed a self-feeding loop
+#               (atoms -> fx mini-chains -> surfacer -> merge_abstract -> fact
+#               re-extraction). The contradiction detector covers atom near-dups.
+# Layer:      core (pure library, no daemon dependency)
+# Role:       the consolidation surfacer — audit_all sweeps EPISODIC chains (skipping
+#             fx_*/all-semantic atom mini-chains) for member pairs whose content-word
+#             Jaccard meets the threshold, and surface() ranks + serializes them to
+#             .consolidation_candidates.json for the Tier-2 merge consumer.
+# Stability:  v1.1 -- find merge candidates in SAM chains (content-word Jaccard over
+#             chain-member pairs); EPISODIC chains only.
+# ErrorModel: the atom-mini-chain exclusion is FAIL-SOFT — an unloadable chain is
+#             treated as episodic (surfaceable), never silently dropping real memory;
+#             a missing single chain (named `chain=`) prints a skip and continues.
+# Depends:    json, re, datetime, pathlib, typing (stdlib).
+# Exposes:    audit_all, audit_chain, surface, strip_frontmatter, shingles, jaccard,
+#             load_chain, load_node_body.
+# Lines:      237
 # Note:       similarity model preserved exactly (content-word Jaccard, 0.15 knee).
-#             The exclusion is fail-soft: an unloadable chain is treated as episodic
-#             (surfaceable), never silently dropping real memory.
-# ─────────────────────────────────────────────
+# --------------------------------------------------------------------------

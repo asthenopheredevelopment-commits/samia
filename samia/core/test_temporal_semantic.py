@@ -1,4 +1,4 @@
-"""test_temporal_semantic — BLOCKER fix for the semantic temporal-query path.
+"""samia.core.test_temporal_semantic — tests for the semantic temporal-query path in samia.core.temporal (BLOCKER fix).
 
 What: tmp-store tests for samia.core.temporal.query(..., semantic=...). Plants a
   self-contained store (a few dated nodes), then exercises the semantic branch
@@ -129,3 +129,18 @@ class TestTemporalSemanticWithIndex(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_temporal_semantic
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      BLOCKER fix — semantic temporal-query fail-soft (no SystemExit on missing index)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.temporal.query(semantic=) — no-index branch fails soft with a trailing note (never SystemExit), non-semantic scan unaffected, real-index branch returns ranked + temporally filtered hits
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.temporal, samia.core.vector
+# Exposes:    — (test module)
+# Lines:      148
+# ------------------------------------------------------------------------------

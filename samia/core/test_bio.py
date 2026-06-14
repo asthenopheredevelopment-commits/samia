@@ -1,4 +1,4 @@
-"""Tests for samia.core.bio — FEAT-2026-06-05 Tier-0 D1/D2 homeostatic Hebbian.
+"""samia.core.test_bio — tests for samia.core.bio (FEAT-2026-06-05 Tier-0 D1/D2 homeostatic Hebbian).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the reachable attractor bar (derived alpha), the one-time
@@ -574,3 +574,18 @@ class TestEngramReplayGenuineOnce(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_bio
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-05/06-07 Tier-0 D1/D2 + Tier-1 P2/P3/P5 (homeostatic Hebbian, salience source, kWTA, engram replay)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.bio — reachable attractor bar, replay homeostasis/genuine-once, per-day decay, re-seed, salience source + merge guard, kWTA sparse-code, engram-replay genuine-once
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.bio, samia.core.vector, samia.core.hippocampus, samia.core.frontmatter
+# Exposes:    — (test module)
+# Lines:      593
+# ------------------------------------------------------------------------------

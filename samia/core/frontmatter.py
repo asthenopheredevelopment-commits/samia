@@ -1,29 +1,32 @@
 """samia.core.frontmatter — YAML-ish frontmatter parsing and serialization.
 
-Carved from duplicated logic in memory_ia.py, memory_session_boot.py,
-memory_temporal_query.py, memory_write_check.py, memory_index_compact.py
-(and ~10 other tools).
+Layer 1 (Owns / Depends):
+    Owns:    parse(text) -> ((fm, order), body) | (None, text)
+             serialize(fm, order, body) -> text
+             parse_val(raw) -> typed scalar ; fmt_val(v) -> str
+             read_node(path) -> (fm, order, body)
+             write_node(path, fm, order, body, override_frozen, integrity_rewrite)
+                 -> None
+    Depends: re, pathlib, typing (stdlib only). write_node late-imports (all
+             fail-open / optional) samia.runtime.migrations.aud61_target_state,
+             samia.runtime.memory_guard, and samia.core.integrity.
 
-The format is a minimal YAML subset used by SAM memory nodes:
-  - Frontmatter delimited by `---` lines at start of file
-  - One `key: value` per line
-  - Scalars: bool ('true'/'false'), int, float, list ('[a, b, c]'), or str
-  - Body is everything after the closing `---`
-
-Order preservation matters because nodes are read/written by humans. We track
-key insertion order so that parse → serialize round-trips are stable.
-
-Public API:
-  parse(text)       → ((fm, order), body) | (None, text)
-  serialize(fm, order, body) → text
-  parse_val(raw)    → typed scalar
-  fmt_val(v)        → str
-  read_node(path)   → (fm, order, body)
-  write_node(path, fm, order, body) → None
-
-Byte-identical output guarantee: parse → serialize on any node currently in
-memory/nodes/ produces the same bytes (modulo trailing-newline normalization
-that the legacy serializers also performed).
+Layer 2 (What / Why):
+    What: a minimal YAML subset for SAM memory nodes — frontmatter delimited by
+          `---` lines at the file start, one `key: value` per line, scalars typed
+          as bool ('true'/'false'), int, float, list ('[a, b, c]'), or str; the
+          body is everything after the closing `---`. parse() splits + types the
+          header (tracking key insertion order); serialize() renders it back;
+          read_node/write_node are the file-level wrappers, and write_node also
+          runs the lifecycle/provenance validation + anchor/stage hooks.
+    Why:  carved from duplicated logic in ~15 legacy tools (memory_ia.py,
+          memory_session_boot.py, memory_temporal_query.py, ...). Order
+          preservation matters because nodes are human-read/written, so a
+          parse -> serialize round-trip must be stable. Byte-identical output
+          guarantee: parse -> serialize on any node currently in memory/nodes/
+          produces the same bytes (modulo the trailing-newline normalization the
+          legacy serializers also performed). The optional write-time hooks are
+          all fail-open so a missing dependency never blocks a node write.
 """
 
 from __future__ import annotations
@@ -251,11 +254,16 @@ def write_node(path: str | Path, fm: dict, order: list[str], body: str,
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.core.frontmatter
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD15 (original) + AUD48 Phase 1 (staging hook)
 #             + AUD61 Phase 2 (target_state write-time validation)
 #             + FEAT-opencode-atoms-integration Phase 1 (runtime provenance validation)
 #             + BUG-2026-05-13 templated-content exclusion (frontmatter_type in payload)
 # Layer:      core (pure library, no daemon dependency)
+# Role:       the order-preserving YAML-subset frontmatter parser/serializer + the
+#             node read/write wrappers (write_node runs the lifecycle/anchor hooks).
 # Stability:  v1.3 -- frontmatter_type added to stage_write payload
 # ErrorModel: read_node raises ValueError on missing frontmatter;
 #             write_node raises ValueError on AUD61 target_state violation;
@@ -264,5 +272,5 @@ def write_node(path: str | Path, fm: dict, order: list[str], body: str,
 #             samia.runtime.memory_guard (optional, fail-open).
 #             samia.runtime.migrations.aud61_target_state (optional, fail-open).
 # Exposes:    parse, serialize, parse_val, fmt_val, read_node, write_node.
-# Lines:      ~200
+# Lines:      271
 # --------------------------------------------------------------------------

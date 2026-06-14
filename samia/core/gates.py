@@ -1,45 +1,38 @@
 """samia.core.gates — Slice 7 unified stall handler (operator-gate side).
 
-A "gate" is any moment we are blocked on an operator decision. Without
-this module, a gate stalls all forward motion until the operator returns.
-With it:
-  1. Gate is registered via `gate_open(...)` when we ask a question.
-  2. After GATE_QUIET_S (300s) of silence, it becomes a stall — daemon
-     surfaces an attention hint and Claude switches to non-blocking work.
-  3. Every PING_CADENCE_S (default 900s = 15min) the gate re-surfaces.
-  4. On operator reply, `gate_close(gate_id, resolution)` clears it.
+Layer 1 (Owns / Depends):
+    Owns:    gate_open(text, original_task, non_blocking_fallback=None,
+                 ping_cadence_s=900, default_action=None,
+                 stall_class="user_gate", warrior=None) -> str — register a gate.
+             gate_close(gate_id, resolution) -> bool — mark one resolved.
+             list_open_gates() -> list[dict] — snapshot of open gates.
+             gate_tick(memory_dir) -> dict — the idle-pulse subscriber that
+                 re-surfaces stale gates as attention hints.
+    Depends: samia.core.attention (writes the kind="gate" attention hint via its
+             private _load/_save, bypassing attention.add's stdout print). stdlib
+             only otherwise (json, secrets, time, pathlib).
+Layer 2 (What / Why):
+    What: a "gate" is any moment we are blocked on an operator decision. gate_open
+          records it to ~/.local/share/asthenos/handoff/pending_gates.json. After
+          GATE_QUIET_S (300s) of silence a gate becomes a stall; gate_tick (fired
+          every tool call by the idle pulse) then posts an attention hint and re-
+          posts it every ping_cadence_s. gate_close clears the gate and appends a
+          telemetry line to gate_resolutions.jsonl. Internal warrior stalls
+          (Slice 3) share the same file + cadence so the operator sees one queue.
+    Why:  without this, a gate stalls all forward motion until the operator
+          returns. The state file makes gates durable across sessions, the single
+          ping cadence keeps the operator's attention surface to one queue, and the
+          stall_class split lets user gates and internal-warrior stalls coexist
+          without a second dispatcher.
 
-Internal warrior stalls (Slice 3) feed the same dispatcher — they share
-the state file and ping cadence so the operator only deals with one queue.
-
-State file:
-  ~/.local/share/asthenos/handoff/pending_gates.json
-  {
-    "version": 1,
-    "gates": [
-      {"id": "gate_<unix>_<rand4>",
-       "asked_at": float,
-       "gate_text": str,
-       "original_task": str,
-       "non_blocking_fallback": list[str],
-       "ping_cadence_s": float,
-       "default_action": str | None,
-       "last_ping_at": float,
-       "stall_class": "user_gate" | "internal_warrior",
-       "warrior": str | None}
-    ]
-  }
-
-Public API (parameterized on memory_dir for the attention-hint surface):
-  gate_open(text, original_task, non_blocking_fallback,
-            ping_cadence_s=900, default_action=None,
-            stall_class="user_gate", warrior=None) -> str
-  gate_close(gate_id, resolution) -> bool
-  list_open_gates() -> list[dict]
-  gate_tick(memory_dir) -> dict          # subscriber, idle-pulse-cadenced
-
-Acceptance: gate opens, walks 6min, idle pulse fires gate_tick, attention
-hint is posted (kind="gate"), non-blocking task can proceed.
+State file shape — pending_gates.json:
+    {"version": 1,
+     "gates": [{"id": "gate_<unix>_<rand4>", "asked_at": float, "gate_text": str,
+                "original_task": str, "non_blocking_fallback": list[str],
+                "ping_cadence_s": float, "default_action": str | None,
+                "last_ping_at": float,
+                "stall_class": "user_gate" | "internal_warrior",
+                "warrior": str | None}]}
 """
 from __future__ import annotations
 
@@ -177,6 +170,9 @@ def gate_tick(memory_dir: Path) -> dict:
     state = _load()
     now = time.time()
     checked = pinged = stale = 0
+    # StaleAndDueGate — What: for each gate, fire a hint only once it has gone stale
+    #     (silent past GATE_QUIET_S) AND is "due" — never pinged, or last ping older
+    #     than this gate's own ping_cadence.
     for g in state.get("gates", []):
         checked += 1
         asked_at = g.get("asked_at", now)
@@ -189,6 +185,9 @@ def gate_tick(memory_dir: Path) -> dict:
         due = (last_ping == 0.0) or ((now - last_ping) > ping_cadence)
         if not due:
             continue
+        # StaleAndDueGate — Why: the two gates separate "newly asked" (let the operator
+        #     answer in peace for GATE_QUIET_S) from "re-surface periodically" — without
+        #     the cadence check every idle pulse (one per tool call) would re-post a hint.
         try:
             note = (
                 f"[{g.get('stall_class', 'user_gate')}] {g.get('gate_text', '')[:160]} "
@@ -214,3 +213,27 @@ def gate_tick(memory_dir: Path) -> dict:
             pass
     _save(state)
     return {"checked": checked, "pinged": pinged, "stale": stale}
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.gates
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Slice 7 unified stall handler (operator-gate side); Slice 3 internal
+#             warrior stalls share the same state file + ping cadence.
+# Layer:      core (pure library; gate_tick is an idle-pulse subscriber)
+# Role:       durable operator/warrior gate queue — open/tick/close a blocked-on-
+#             decision gate in pending_gates.json; the idle-pulse subscriber re-
+#             surfaces stale gates as attention hints on a per-gate ping cadence.
+# Stability:  stable -- gate lifecycle (open/tick/close) + durable JSON state.
+# ErrorModel: _load fails SOFT to an empty {version,gates} state on a missing or
+#             corrupt file; gate_tick swallows per-gate hint-write errors (a bad
+#             gate never blocks the others) and the resolution log append is
+#             best-effort. gate_open raises ValueError on an invalid stall_class.
+# Depends:    json, secrets, time, pathlib (stdlib). samia.core.attention
+#             (_load/_save, to bypass attention.add's stdout print in the pulse).
+# Exposes:    gate_open, gate_close, list_open_gates, gate_tick;
+#             GATE_QUIET_S, DEFAULT_PING_CADENCE_S, GATES_FILE constants.
+# Lines:      236
+# --------------------------------------------------------------------------

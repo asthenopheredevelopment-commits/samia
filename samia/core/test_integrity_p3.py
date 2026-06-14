@@ -1,4 +1,4 @@
-"""Tests for samia.core.integrity P3 — FEAT-2026-06-07 granular-recall-repaired-decay.
+"""samia.core.test_integrity_p3 — tests for samia.core.integrity Phase P3 (FEAT-2026-06-07 granular-recall-repaired-decay).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for Phase P3 (FINAL) of the SECOND (content-fidelity) decay axis:
@@ -507,3 +507,25 @@ class TestP3InertByDefault(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_integrity_p3
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 granular-recall-repaired-decay P3
+# Layer:      test (pytest)
+# Role:       tests for samia.core.integrity P3 — terminal freeze-at-floor via
+#             reversible ia.freeze/thaw, high-salience freeze exemption, gated
+#             no-anchor-only generative fallback (marked confabulation_risk),
+#             anchor-first always wins, safe no-op when disabled, relevance
+#             axis untouched, both P3 mechanisms inert by default.
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.integrity, samia.core.frontmatter,
+#             samia.core.ia, samia.core.tier, samia.core.bio,
+#             samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      533
+# --------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tests for samia.core.temporal_distinctiveness — FEAT-2026-06-11 temporal-recall P5.
+"""samia.core.test_temporal_distinctiveness — tests for samia.core.temporal_distinctiveness (FEAT-2026-06-11 temporal-recall P5).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the SIMPLE log-time distinctiveness re-ranker (proposal §7):
@@ -340,18 +340,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_temporal_distinctiveness] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
-# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P5 tests — temporal
-#             distinctiveness (§7). Asserts: the SIMPLE ratio D(i)=1/Σ_j exp(−c·|logT_i−
-#             logT_j|) recomputed in closed form; D ∈ (0,1]; isolation out-ranks a tight
-#             cluster; the applicability gate soft-fails a degenerate pool to all-0.0; a
-#             legacy node (no written_at/valid_from) still gets a usable T via st_mtime;
-#             c reads live env / clamps [0.5,2.0]; and the load-bearing FLAG-OFF / λD=0
-#             BYTE-IDENTITY of chainogram_retrieve vs a pinned baseline ordering.
-# Role:       prove P5's correctness + flag-off byte-identity
-# Depends:    temporal_distinctiveness, context_extension; unittest, tempfile, json,
-#             math, time, os
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_temporal_distinctiveness
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P5 (temporal distinctiveness, §7)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.temporal_distinctiveness — SIMPLE log-time D ratio in closed form, isolation out-ranks cluster, degenerate-pool soft-fail, st_mtime fallback, c env clamp, flag-off/λD=0 byte-identity
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.temporal_distinctiveness, samia.core.context_extension
+# Exposes:    — (test module)
+# Lines:      357
+# ------------------------------------------------------------------------------

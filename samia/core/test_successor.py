@@ -1,4 +1,4 @@
-"""Tests for the need-as-successor-representation term — FEAT-2026-06-11 P3.
+"""samia.core.test_successor — tests for the need-as-successor-representation term (FEAT-2026-06-11 P3).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for core/successor.py (proposal §5.1-5.4, symmetric phase 1) and
@@ -388,17 +388,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_successor] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
-# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P3 tests — need-as-SR
-#             term (§5.1-5.4). Asserts: T row-stochastic + discounted series bounded;
-#             gSR=0 / gSR=0∧L=1 == the exact 1-step proxy need=p0; 2-hop transitive reach
-#             (c unreached at L=1, reached at L=2; closer node outscores farther); seed
-#             normalizes to a distribution + degenerate→uniform; gSR/L env clamp to
-#             bounds; and the load-bearing FLAG-OFF BYTE-IDENTITY of chainogram_retrieve
-#             (flag-off, flag-on-λN=0, and flat-need λN-on) vs the pinned baseline.
-# Role:       prove P3's SR structure + flag-off byte-identity
-# Depends:    successor; context_extension; unittest, tempfile, json, os
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_successor
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P3 — need-as-SR term (§5.1-5.4)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.successor + context_extension — T row-stochastic + discounted series bounded, gSR=0 / gSR=0∧L=1 == exact 1-step proxy, 2-hop transitive reach, seed normalization + clamp, and flag-off byte-identity of chainogram_retrieve
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.successor, samia.core.context_extension
+# Exposes:    — (test module)
+# Lines:      405
+# ------------------------------------------------------------------------------

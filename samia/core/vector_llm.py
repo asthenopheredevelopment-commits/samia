@@ -1,24 +1,31 @@
 """samia.core.vector_llm — LLM-preamble vector index.
 
-Carved from memory_vector_index_llm.py. Companion to samia.core.vector
-and samia.core.vector_contextual. Each node is prepended with a 50-100
-token LLM-generated context preamble before embedding (Anthropic
-Contextual Retrieval at full strength).
+Layer 1 (Owns / Depends):
+    Owns:    build(memory_dir, rebuild=False, force_llm=False, limit=None) -> manifest
+                 dict — embed each node prefixed with an LLM-generated context preamble.
+             query(memory_dir, text, top_k=24) -> list[{node, score, title}].
+    Depends: numpy; samia.core.vector (shared embedder + node-text + sha helpers);
+             samia.core.vector_contextual (node->chain map); a local LLM backend —
+             the SAM/IA runtime daemon (samia.runtime.client) first, else Ollama over
+             urllib (MEMORY_PREAMBLE_MODEL, default gemma3:4b).
+Layer 2 (What / Why):
+    What: each node is prepended with a 50-100 token LLM-generated context preamble
+          (Anthropic Contextual Retrieval) before being embedded into embeddings_llm.npy
+          / manifest_llm.json. The manifest caches (body_sha256, preamble, embed_sha256)
+          per node; a body edit invalidates the preamble, a structural-only change
+          re-embeds but reuses the cached LLM text, and force_llm=True regenerates all.
+    Why:  the preamble injects chain/sibling context the body alone lacks, so semantic
+          recall locates a node by what it MEANS in the chain, not just its words. The
+          preamble model is intentionally cheap/local (no thinking mode) and the per-node
+          cache keeps an incremental build off the LLM for unchanged nodes. A daemon
+          backend (Qwen via LlamaCppBackend) is tried first for telemetry; an Ollama
+          fallback honors MEMORY_PREAMBLE_MODEL; a structural fallback covers total LLM
+          failure so a build never aborts on a generation error.
 
-Caching: manifest stores (body_sha256, preamble) per node. Body edits
-invalidate the preamble; structural changes (chain reorganization) do
-not — re-embed but reuse the LLM text. force_llm=True regenerates all.
-
-Backend: gemma3:4b on local Ollama (~2-3s/node, no thinking mode).
-Override via env MEMORY_PREAMBLE_MODEL.
-
-Index layout (under <memory_dir>/vector_index/):
-    embeddings_llm.npy
-    manifest_llm.json
-
-Public API (parameterized on memory_dir):
-    build(memory_dir, rebuild=False, force_llm=False, limit=None)
-    query(memory_dir, text, top_k=24)
+Layer 3 (Changelog):
+    Carved from memory_vector_index_llm.py. Companion to samia.core.vector and
+    samia.core.vector_contextual.
+    AUD28.7 V1: prefer the runtime daemon's infer op over Ollama for preambles.
 """
 
 from __future__ import annotations
@@ -122,6 +129,8 @@ def _generate_preamble_daemon(prompt: str) -> str | None:
         return None
 
 
+# _generate_preamble — What: produce a node's preamble via the backend cascade
+#     (daemon -> Ollama), then strip any <think>...</think> reasoning prefix.
 def _generate_preamble(title: str, body: str, chain_id: str | None,
                        neighbors: list[str]) -> str | None:
     prompt = _build_prompt(title, body, chain_id, neighbors)
@@ -160,6 +169,10 @@ def _generate_preamble(title: str, body: str, chain_id: str | None,
         end = text.find("</think>")
         text = text[end + len("</think>"):].strip() if end >= 0 else ""
     return text or None
+# _generate_preamble — Why: a reasoning model may emit a <think> block before the answer;
+#     keeping only the post-</think> text avoids embedding the model's scratch reasoning. An
+#     unterminated <think> (no closing tag) is treated as all-reasoning -> empty -> None, so
+#     the caller falls through to the structural fallback rather than embedding noise.
 
 
 def _structural_fallback(chain_id: str | None,
@@ -221,6 +234,9 @@ def build(memory_dir: Path, rebuild: bool = False,
         neighbors = info.get("neighbors") or []
         cached = cached_entries.get(p.name) or {}
         cached_body_sig = cached.get("body_sha256")
+        # PreambleCache — What: reuse the cached preamble unless force_llm is set or the
+        #     node's body sha changed; a (re)generation falls back to a structural string
+        #     when the LLM yields nothing.
         preamble: str | None = (cached.get("preamble")
                                 if not force_llm else None)
 
@@ -234,6 +250,11 @@ def build(memory_dir: Path, rebuild: bool = False,
             else:
                 preamble = _structural_fallback(chain_id, neighbors)
                 llm_fallbacks += 1
+        # PreambleCache — Why: the LLM call is the expensive step, so the preamble is keyed
+        #     on the BODY sha (not the embed text): a structural-only change reuses the LLM
+        #     text and only re-embeds, while a body edit forces a fresh preamble. The
+        #     structural fallback guarantees every node gets SOME context so a generation
+        #     outage degrades quality rather than dropping the node from the index.
 
         text_for_embed = (preamble.strip() + "\n\n" + body).strip()
         text_sig = _vec._sha256(text_for_embed)
@@ -324,3 +345,27 @@ def query(memory_dir: Path, text: str, top_k: int = 24) -> list[dict]:
         out.append({"node": rel, "score": float(sims[idx_i]),
                     "title": entries[rel].get("title", rel)})
     return out
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.vector_llm
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Carved from memory_vector_index_llm.py
+#             + AUD28.7 V1: prefer the runtime daemon's infer op over Ollama for
+#               preamble generation (telemetry-emitting), Ollama as fallback.
+# Layer:      core (library; needs a local LLM backend for preamble generation)
+# Role:       LLM-preamble vector index — prepends a 50-100 token LLM-generated context
+#             preamble (daemon→Ollama cascade, structural fallback) per node before
+#             embedding; body-sha-keyed preamble cache + cosine top-k query.
+# Stability:  stable -- LLM-preamble (Contextual Retrieval) vector index variant.
+# ErrorModel: a preamble LLM failure (daemon down, Ollama error, empty/think-only
+#             output) degrades to a structural fallback string — a build never
+#             aborts on a generation error; query() returns [] when no index exists.
+# Depends:    numpy; samia.core.vector (embedder + sha + node-text helpers);
+#             samia.core.vector_contextual (node->chain map); samia.runtime.client
+#             (daemon backend, optional) + Ollama over urllib (MEMORY_PREAMBLE_MODEL).
+# Exposes:    build, query.
+# Lines:      368
+# --------------------------------------------------------------------------

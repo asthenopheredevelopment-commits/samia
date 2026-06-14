@@ -51,9 +51,9 @@ _log = logging.getLogger("samia.runtime.memory_guard")
 # Configuration
 # ---------------------------------------------------------------------------
 
-# _INJECTION_PATTERNS -- What: regex patterns that indicate prompt-injection
+# _INJECTION_PATTERNS — What: regex patterns that indicate prompt-injection
 #   attempts in a memory write payload.
-# _INJECTION_PATTERNS -- Why: lightweight first-pass filter to catch obvious
+# _INJECTION_PATTERNS — Why: lightweight first-pass filter to catch obvious
 #   injection payloads before they enter the memory store.  Patterns are
 #   deliberately broad (case-insensitive) to catch common attack templates.
 _INJECTION_PATTERNS: list[re.Pattern] = [
@@ -64,26 +64,26 @@ _INJECTION_PATTERNS: list[re.Pattern] = [
     re.compile(r"new\s+instructions?\s*:", re.IGNORECASE),
 ]
 
-# _CONTRADICTION_THRESHOLD -- What: jaccard similarity threshold above which
+# _CONTRADICTION_THRESHOLD — What: jaccard similarity threshold above which
 #   a payload is flagged as potentially contradicting a recent memory node.
-# _CONTRADICTION_THRESHOLD -- Why: 0.25 is above the content-word noise floor
+# _CONTRADICTION_THRESHOLD — Why: 0.25 is above the content-word noise floor
 #   (0.01-0.05) but low enough to catch topical adjacency.  A high overlap with
 #   different content suggests contradiction rather than duplication.
 _CONTRADICTION_THRESHOLD: float = 0.25
 
-# _CONTRADICTION_WINDOW_H -- What: hours to look back for recent nodes when
+# _CONTRADICTION_WINDOW_H — What: hours to look back for recent nodes when
 #   checking contradiction smell.
-# _CONTRADICTION_WINDOW_H -- Why: 24h window per A-MemGuard paper recommendation;
+# _CONTRADICTION_WINDOW_H — Why: 24h window per A-MemGuard paper recommendation;
 #   keeps comparison set small and relevant to active session context.
 _CONTRADICTION_WINDOW_H: int = 24
 
-# _LLM_JUDGE_ENABLED -- What: flag to enable/disable local LLM judge for
+# _LLM_JUDGE_ENABLED — What: flag to enable/disable local LLM judge for
 #   suspicious write detection.
-# _LLM_JUDGE_ENABLED -- Why: default-off to avoid heartbeat budget impact.
+# _LLM_JUDGE_ENABLED — Why: default-off to avoid heartbeat budget impact.
 #   Phase 2 wires the path but does not enable it.  Operator can enable via
 #   environment variable ASTHENOS_MEMORY_GUARD_LLM_JUDGE=1.
-# _MAX_QUEUE_BYTES -- What: per-file size cap for JSONL queue files.
-# _MAX_QUEUE_BYTES -- Why: backstop against runaway growth (cf. 2026-05-13
+# _MAX_QUEUE_BYTES — What: per-file size cap for JSONL queue files.
+# _MAX_QUEUE_BYTES — Why: backstop against runaway growth (cf. 2026-05-13
 #   cascade that ballooned pending.jsonl to ~975k entries / 10 GB).  When a
 #   queue file exceeds this cap, the current file is rotated to <path>.1
 #   before the next append, keeping disk usage bounded.
@@ -93,8 +93,8 @@ _LLM_JUDGE_ENABLED: bool = os.environ.get(
     "ASTHENOS_MEMORY_GUARD_LLM_JUDGE", "0"
 ) == "1"
 
-# _BLOCK_FLAGGED -- What: when True, flagged writes are blocked (not committed).
-# _BLOCK_FLAGGED -- Why: enforcement mode is opt-in via env var so operator can
+# _BLOCK_FLAGGED — What: when True, flagged writes are blocked (not committed).
+# _BLOCK_FLAGGED — Why: enforcement mode is opt-in via env var so operator can
 #   switch from observation to blocking after tuning false-positive rate.
 _BLOCK_FLAGGED: bool = os.environ.get(
     "ASTHENOS_MEMORY_GUARD_BLOCK_FLAGGED", "0"
@@ -104,16 +104,16 @@ _BLOCK_FLAGGED: bool = os.environ.get(
 # Staged-write log path + pending queue path
 # ---------------------------------------------------------------------------
 
-# STAGED_LOG -- What: append-only JSONL log of every memory write that passes
+# STAGED_LOG — What: append-only JSONL log of every memory write that passes
 #   through the staging buffer.
-# STAGED_LOG -- Why: full write surface capture for audit and Phase 2 validation.
+# STAGED_LOG — Why: full write surface capture for audit and Phase 2 validation.
 STAGED_LOG = (
     Path.home() / ".local" / "share" / "asthenos" / "memory_guard" / "staged.jsonl"
 )
 
-# PENDING_LOG -- What: JSONL file of writes flagged by validation that await
+# PENDING_LOG — What: JSONL file of writes flagged by validation that await
 #   operator review (approve or discard).
-# PENDING_LOG -- Why: the Atoms MemoryGuard panel reads this file to surface
+# PENDING_LOG — Why: the Atoms MemoryGuard panel reads this file to surface
 #   flagged writes for operator judgment.  Entries are removed on approve/discard.
 PENDING_LOG = (
     Path.home() / ".local" / "share" / "asthenos" / "memory_guard" / "pending.jsonl"
@@ -132,8 +132,8 @@ PENDING_LOG = (
 # In-memory statistics
 # ---------------------------------------------------------------------------
 
-# _stats_lock -- What: protects all mutable module-level state.
-# _stats_lock -- Why: stage_write() may be called from multiple threads
+# _stats_lock — What: protects all mutable module-level state.
+# _stats_lock — Why: stage_write() may be called from multiple threads
 #   (daemon IPC handlers, direct imports).
 _stats_lock = threading.Lock()
 _total: int = 0
@@ -143,8 +143,8 @@ _recent: list[dict[str, Any]] = []  # last 100 entries (ring buffer)
 _by_kind: Counter = Counter()
 _by_caller: Counter = Counter()
 
-# _RECENT_MAX -- What: max entries kept in the in-memory recent ring buffer.
-# _RECENT_MAX -- Why: 100 is enough for operator inspection via
+# _RECENT_MAX — What: max entries kept in the in-memory recent ring buffer.
+# _RECENT_MAX — Why: 100 is enough for operator inspection via
 #   memory_guard_status without unbounded memory growth.
 _RECENT_MAX = 100
 
@@ -247,9 +247,9 @@ def _run_llm_judge(text: str) -> list[str]:
 # Templated-content exclusion
 # ---------------------------------------------------------------------------
 
-# _TEMPLATED_TYPES -- What: frontmatter type values whose content is
+# _TEMPLATED_TYPES — What: frontmatter type values whose content is
 #   systematically generated (templates, not semantic user content).
-# _TEMPLATED_TYPES -- Why: BUG-2026-05-13-memory-guard-templated-content-exclusion.
+# _TEMPLATED_TYPES — Why: BUG-2026-05-13-memory-guard-templated-content-exclusion.
 #   These content classes trivially exceed the Jaccard >= 0.82 contradiction
 #   threshold against any corpus of similar-shape templates. Running
 #   contradiction_smell on them creates a positive-feedback loop where each
@@ -264,9 +264,9 @@ def _run_llm_judge(text: str) -> list[str]:
 #   smell is the wrong tool for them.
 _TEMPLATED_TYPES: set[str] = {"bug", "session_offload", "semantic"}
 
-# _TEMPLATED_PATH_PATTERNS -- What: basename regex patterns for content classes
+# _TEMPLATED_PATH_PATTERNS — What: basename regex patterns for content classes
 #   that lack a canonical frontmatter type but are systematically templated.
-# _TEMPLATED_PATH_PATTERNS -- Why: provider benchmarks, sigil warnings, and
+# _TEMPLATED_PATH_PATTERNS — Why: provider benchmarks, sigil warnings, and
 #   SEWE format blocks are emitted by automated generators with near-identical
 #   structure. Until their emitters add a proper type field (D3 backlog), these
 #   path patterns serve as a fallback exclusion gate.
@@ -660,8 +660,8 @@ def stage_write(kind: str, target: str, payload: dict[str, Any],
     # If flagged or blocked, write to pending queue for operator review.
     if verdict in ("flagged", "blocked"):
         _write_pending(record)
-        # AUD84-Phase2-HookC -- What: emit a bug node for flagged writes.
-        # AUD84-Phase2-HookC -- Why: AUD84 D4 source (e) -- memory-guard
+        # AUD84-Phase2-HookC — What: emit a bug node for flagged writes.
+        # AUD84-Phase2-HookC — Why: AUD84 D4 source (e) -- memory-guard
         #     flagged writes flow into the bug-discovery pipeline. Dedup in
         #     emit_bug_node prevents repeat flags from flooding (D7).
         _emit_bug_node_on_flag(target, reasons, write_id)
@@ -947,6 +947,9 @@ def register_ops() -> None:
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.memory_guard
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD48 -- Phases 1-3 (staging + validation + operator review)
 #             AUD60 -- embedding-based contradiction detection integrated
 #             AUD84 -- Phase 2 hook (c): emit bug node on flagged write
@@ -967,6 +970,9 @@ def register_ops() -> None:
 #                           gated by the same _skip_contradiction flag so bug nodes
 #                           can't flag other bug nodes via either smell path.
 # Layer:      runtime (in-daemon, JSONL logs + IPC ops)
+# Role:       memory-write defense — a staging buffer that logs every write, runs
+#             heuristic + embedding contradiction validation, and routes flagged
+#             writes to a pending.jsonl queue for operator approve/discard.
 # Stability:  v0.3.4 -- supersession surfacer removed (single owner reconciliation)
 # ErrorModel: fail-open for staging log; flagged writes held in pending.jsonl;
 #             IPC handlers never raise; approve/discard are atomic rewrites.
@@ -979,8 +985,7 @@ def register_ops() -> None:
 #             samia.runtime.bug_records (emit_bug_node) -- optional, fail-open.
 # Exposes:    stage_write, statistics, pending_list, approve_write,
 #             discard_write, guard_stats, register_ops, STAGED_LOG, PENDING_LOG.
-# Updated:    2026-05-30 -- producer-side hardening (size-cap rotation on JSONL
 #             append paths, cheap _count_lines for guard_stats, bug_*.md
 #             templated-path pattern for defense-in-depth).
-# Lines:      ~540
+# Lines:      989
 # --------------------------------------------------------------------------

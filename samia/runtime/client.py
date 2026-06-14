@@ -87,6 +87,8 @@ class SamiaClient:
 
     # -- Connection management --------------------------------------------
 
+    # _connect — What: return the cached socket, else open+connect a fresh AF_UNIX
+    #     stream socket to the daemon and cache it.
     def _connect(self) -> socket.socket:
         """Connect (or return existing connection)."""
         if self._sock is not None:
@@ -102,6 +104,9 @@ class SamiaClient:
             raise DaemonNotRunning(f"cannot connect to daemon: {exc}") from exc
         self._sock = s
         return s
+    # _connect — Why: connection is lazy + cached so the client reuses one socket
+    #     across calls; an absent socket file or a refused connect is normalized to
+    #     DaemonNotRunning (a single typed signal) instead of a raw OSError leaking out.
 
     def _disconnect(self) -> None:
         """Close the socket if open."""
@@ -120,6 +125,8 @@ class SamiaClient:
         data = json.dumps(request, separators=(",", ":")).encode("utf-8") + b"\n"
         sock.sendall(data)
 
+    # _recv — What: read from the socket until the first newline, then decode that
+    #     first line as one JSON response object.
     @staticmethod
     def _recv(sock: socket.socket) -> dict[str, Any]:
         """Read one JSON-line response (newline-terminated)."""
@@ -132,6 +139,9 @@ class SamiaClient:
             if b"\n" in buf:
                 line, _ = buf.split(b"\n", 1)
                 return json.loads(line.decode("utf-8"))
+    # _recv — Why: the wire protocol is newline-delimited JSON, so one recv may carry a
+    #     partial line (loop+accumulate) and an empty chunk means the peer closed the
+    #     connection mid-response — surfaced as ConnectionError so call() can retry once.
 
     # -- Core RPC ---------------------------------------------------------
 
@@ -148,6 +158,9 @@ class SamiaClient:
             "request_id": uuid.uuid4().hex,
         }
 
+        # RetryOnce — What: serialize the round-trip under the lock and retry exactly
+        #     once on a broken socket — reconnect on the second pass, raise on a second
+        #     failure.
         with self._lock:
             for attempt in range(2):
                 sock = self._connect()
@@ -161,8 +174,13 @@ class SamiaClient:
                         raise DaemonNotRunning("connection broken after retry")
             else:
                 raise DaemonNotRunning("connection broken after retry")
+        # RetryOnce — Why: a cached socket can be stale (daemon restarted), so the first
+        #     failure drops it and the loop's second pass _connect()s fresh; the lock makes
+        #     one client safe across threads. The for/else mirrors the inner raise so a
+        #     never-`break` loop cannot fall through with `resp` unbound.
 
-        # Validate response.
+        # ValidateResponse — What: reject a reply whose request_id does not match the
+        #     one sent, or whose ok flag is false; otherwise return its result.
         if resp.get("request_id") != request["request_id"]:
             raise SamiaClientError(
                 f"request_id mismatch: sent {request['request_id']!r}, "
@@ -172,6 +190,9 @@ class SamiaClient:
             raise SamiaClientError(resp.get("error") or "unknown error")
 
         return resp.get("result")
+        # ValidateResponse — Why: the id check guards against a desynchronized stream
+        #     (reading a prior call's reply on a reused socket); a false ok surfaces the
+        #     daemon's own error as a SamiaClientError rather than returning a bad result.
 
     # -- Convenience methods -----------------------------------------------
 
@@ -206,6 +227,18 @@ class SamiaClient:
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.client
-# phase: AUD26-26.1
-# layer: runtime (long-lived process)
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      AUD26 Phase 26.1 (foundation client library)
+# Layer:      runtime (long-lived process; thin client, no daemon dependency)
+# Role:       thin AF_UNIX JSON-line client every daemon consumer uses to call ops
+#             (single-retry reconnect, context-manager, health/version/echo/shutdown).
+# Stability:  stable -- JSON-line RPC over AF_UNIX; single-retry reconnect.
+# ErrorModel: DaemonNotRunning on an unreachable / mid-call-closed socket (after one
+#             reconnect attempt); SamiaClientError on a request_id mismatch or a
+#             daemon ok=false reply. No silent failures on the call path.
+# Depends:    json, os, socket, threading, uuid, pathlib, typing (stdlib only).
+# Exposes:    SamiaClient, SamiaClientError, DaemonNotRunning, DEFAULT_TIMEOUT.
+# Lines:      241
 # --------------------------------------------------------------------------

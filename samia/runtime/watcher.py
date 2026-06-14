@@ -1,21 +1,28 @@
 """samia.runtime.watcher -- filesystem watcher for the SAM/IA memory runtime.
 
-Monitors nodes/, chains/, pool/, and MEMORY.md for external writes and
-schedules debounced maintenance jobs (vector_index_incremental,
-memory_md_regen) via an internal action queue.
+Layer 1 (Owns / Depends):
+    Owns:    start(memory_dir, log_fn) -> None — spawn the watcher + worker
+                 threads. stop() -> None — join threads, drain queues, release
+                 resources. suppress_self(path) — context manager that ignores
+                 events on `path` for 5s (self-write loop prevention).
+    Depends: stdlib only (contextlib, threading, time, pathlib). OPTIONAL at
+             runtime: inotify_simple → pyinotify → mtime polling (auto-detected,
+             tried in that order). Dispatched jobs lazily import samia.core.vector
+             (build) and samia.core.compact_index (regenerate, dev-only / absent in
+             the public carve — resolved once and SKIPPED, not failed, when absent).
+Layer 2 (What / Why):
+    What: watch nodes/, chains/, pool/, and MEMORY.md for external writes; on a
+          change, schedule debounced maintenance (vector_index_incremental @30s,
+          memory_md_regen @60s) into an in-memory action queue. A worker thread
+          dispatches matured actions every 5s. Newer events overwrite older queue
+          entries (the debounce); self-writes are suppressed for 5s to avoid loops.
+    Why:  external edits to the memory tree must trigger reindex/regen, but raw
+          per-event firing would thrash on bursts — debouncing collapses a burst
+          into one job. The backend ladder keeps latency low where inotify exists
+          and still works anywhere via polling. suppress_self breaks the regen →
+          MEMORY.md write → regen feedback loop.
 
-Backends (tried in order):
-  1. inotify_simple  -- best latency, lowest CPU
-  2. pyinotify       -- fallback inotify wrapper
-  3. polling (mtime) -- universal fallback, 2s scan interval
-
-Public API (called by samia.runtime.daemon):
-  start(memory_dir, log_fn) -> None   -- spawns watcher + worker threads
-  stop()                    -> None   -- joins threads, releases resources
-
-Loop prevention:
-  with suppress_self(path): ...       -- ignores events on path for 5s
-
+Backend ladder: inotify_simple (best latency) → pyinotify → polling (mtime, 2s).
 Design doc: plans/sam_ia_runtime_design.md, sections 1.2, 4.3, 6.1.
 """
 
@@ -434,3 +441,29 @@ def stop() -> None:
         _action_queue.clear()
     with _suppress_lock:
         _suppress_set.clear()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.watcher
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      SAM/IA runtime (design doc §1.2/§4.3/§6.1) — debounced FS watcher.
+# Layer:      runtime (daemon-spawned threads; called by samia.runtime.daemon)
+# Role:       filesystem watcher for the memory tree — watches nodes/chains/pool/
+#             MEMORY.md via a backend ladder (inotify_simple -> pyinotify -> mtime
+#             polling), debounces bursts into an action queue, and dispatches matured
+#             reindex/regen jobs, suppressing self-writes to break the regen loop.
+# Stability:  stable -- start/stop lifecycle + debounced action queue; three
+#             auto-detected backends behind one classifier.
+# ErrorModel: _detect_backend degrades inotify_simple -> pyinotify -> polling on
+#             ImportError; _dispatch_actions wraps each job so one failure logs and
+#             never kills the worker; a missing compact_index (dev-only, absent in
+#             the public carve) is SKIPPED with a one-time debug log, not failed;
+#             per-file stat() in the polling scan swallows OSError.
+# Depends:    contextlib, threading, time, pathlib (stdlib). Optional runtime:
+#             inotify_simple / pyinotify (backends); lazy samia.core.vector.build
+#             and samia.core.compact_index.regenerate (dispatched jobs).
+# Exposes:    start, stop, suppress_self.
+# Lines:      466
+# --------------------------------------------------------------------------

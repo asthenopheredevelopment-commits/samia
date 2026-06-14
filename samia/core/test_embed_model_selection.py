@@ -1,4 +1,4 @@
-"""test_embed_model_selection -- coverage for the SLOT-SCALING embedder seam.
+"""samia.core.test_embed_model_selection — tests for the SLOT-SCALING embedder seam.
 
 Layer 1 (Owns / Depends):
     Owns:    the ASTHENOS_EMBED_MODEL selection contract in samia.core.vector:
@@ -241,3 +241,18 @@ def test_ensure_model_no_reload_when_same(monkeypatch):
                            side_effect=AssertionError("must not reload")):
         vector._ensure_model()
     assert vector._model is sentinel
+
+
+# [Asthenosphere] samia.core.test_embed_model_selection
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      SLOT-SCALING embedder seam (ASTHENOS_EMBED_MODEL selection + cross-embedder guard)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.vector — active_model_id env contract, manifest model/dim provenance, EmbedModelMismatch cross-embedder guard, legacy-default handling, _ensure_model singleton rebind
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    pytest + samia.core.vector
+# Exposes:    — (test module)
+# Lines:      260
+# ------------------------------------------------------------------------------

@@ -1,26 +1,33 @@
 """samia.core.judge — Tier 2b local-LLM permission judge.
 
-Provides `judge(pattern, context) -> verdict` for the permission-gating
-auditor's escalation path. When the rule-based auditor (Tier 2a) can't
-decide on a novel sub-agent tool call pattern, it calls here for a
-local-LLM verdict before escalating to Claude (Tier 3) or operator (Tier 4).
+Layer 1 (Owns / Depends):
+    Owns:    judge — ask a local LLM whether a sub-agent tool-call pattern is safe
+                 to auto-approve; ALWAYS returns a verdict dict, never raises.
+             ensure_ollama_up — start the Ollama daemon if down, wait for reachable.
+    Depends: stdlib only (json, os, re, shutil, subprocess, time, urllib, typing).
+             samia.runtime.client (SamiaClient — imported LAZILY inside
+             _judge_daemon; the daemon path is optional). External processes
+             (ollama serve, llama-cli) are probed at runtime, never required.
+Layer 2 (What / Why):
+    What: judge() builds a prompt from (pattern, context), then tries backends in
+          order — (0) the SAM/IA runtime daemon's infer op, (1) Ollama's HTTP
+          /api/generate, (2) the llama-cli CLI — and parses the model's three-line
+          'VERDICT/CONFIDENCE/RATIONALE' reply into a verdict dict
+          {verdict, confidence, rationale, backend, model, wall_ms}. If no backend
+          answers it returns verdict='unsure', backend='none'.
+    Why:  this is Tier 2b of the permission gate: the rule-based auditor (Tier 2a)
+          calls here only for NOVEL patterns it can't decide, and an 'unsure'
+          result is the signal to escalate to Claude (Tier 3) or the operator
+          (Tier 4). Because it sits on the gating hot path, it must degrade rather
+          than throw — every failure mode collapses to a well-formed 'unsure'/'none'
+          dict so a down LLM means "escalate", never "crash the gate". Backends are
+          ordered cheapest/most-integrated first (daemon reuses a warm model) to
+          freshest fallback; the small-model retry (FALLBACK_SMALL) covers an
+          OOM/load failure of the larger default.
 
-Backends, tried in order:
-  1. Ollama HTTP API at http://127.0.0.1:11434  (primary; lazy-start)
-  2. llama-cli CLI                              (fallback if installed)
-  3. Returns {"verdict":"unsure","backend":"none"}  (degraded — caller escalates)
-
-Public API:
-  judge(pattern, context, *, model=None, timeout_s=30.0) -> dict
-  ensure_ollama_up(timeout_s=10.0) -> bool
-
-Verdict shape:
-  {"verdict": "allow"|"deny"|"unsure",
-   "confidence": float in [0,1],
-   "rationale": str (≤200 chars),
-   "backend": "ollama"|"llama-cli"|"none",
-   "model": str|None,
-   "wall_ms": int}
+Layer 3 (Changelog):
+    (AUD28.7 V1 added Backend 0 — the SAM/IA runtime daemon's infer op — ahead of
+     Ollama, so a judgment reuses the daemon's already-loaded LlamaCppBackend.)
 """
 from __future__ import annotations
 
@@ -57,6 +64,8 @@ def ensure_ollama_up(timeout_s: float = 10.0) -> bool:
         return True
     if not shutil.which("ollama"):
         return False
+    # LazyStart — What: spawn `ollama serve` detached, then poll reachability until
+    #     timeout_s before giving up.
     try:
         subprocess.Popen(
             ["ollama", "serve"],
@@ -71,6 +80,9 @@ def ensure_ollama_up(timeout_s: float = 10.0) -> bool:
             return True
         time.sleep(0.5)
     return False
+# LazyStart — Why: the judge must not require an operator to pre-start Ollama, but it
+#     also must not block the gate forever — start_new_session detaches the daemon from
+#     this process so it survives, and the bounded poll fails soft to the next backend.
 
 
 def _llama_cli_available() -> bool:
@@ -91,6 +103,8 @@ JUDGE_SYSTEM_PROMPT = (
 )
 
 
+# _build_prompt — What: render (pattern, context) into the judge prompt — caller label,
+#     tool, pattern, and a trimmed summary of the salient tool_input keys.
 def _build_prompt(pattern: str, context: dict) -> str:
     is_sidechain = context.get("is_sidechain")
     agent_label = "sub-agent" if is_sidechain else (
@@ -117,6 +131,11 @@ def _build_prompt(pattern: str, context: dict) -> str:
         f"Inputs:\n" + "\n".join(inp_summary) + "\n\n"
         f"Decide. Reply in the three required lines only."
     )
+# _build_prompt — Why: only a small whitelist of input keys is surfaced (file_path,
+#     command, ...) and each is truncated to 200 chars — a judgment hinges on the
+#     pattern + the salient args, and a huge tool_input would waste the model's context
+#     and slow the gate. is_sidechain=None (undeterminable) maps to "unknown-agent" so
+#     the prompt never claims a caller class it doesn't know.
 
 
 # ── Response parsing ───────────────────────────────────────────────
@@ -126,6 +145,8 @@ _CONF_RE = re.compile(r"^\s*CONFIDENCE:\s*([0-9.]+)", re.I | re.M)
 _RAT_RE = re.compile(r"^\s*RATIONALE:\s*(.+)$", re.I | re.M)
 
 
+# _parse_response — What: pull (verdict, confidence, rationale) out of the model's
+#     free text via the three line-anchored regexes, with safe defaults for each field.
 def _parse_response(text: str) -> tuple[str, float, str]:
     v_m = _VERDICT_RE.search(text or "")
     verdict = v_m.group(1).lower() if v_m else "unsure"
@@ -138,6 +159,10 @@ def _parse_response(text: str) -> tuple[str, float, str]:
     r_m = _RAT_RE.search(text or "")
     rationale = (r_m.group(1).strip() if r_m else (text or "")[:200].strip())
     return verdict, confidence, rationale[:200]
+# _parse_response — Why: a local model often deviates from the exact format, so every
+#     field fails soft — a missing verdict becomes 'unsure' (the escalate signal), a
+#     missing/garbled confidence becomes a neutral 0.3, and confidence is clamped to
+#     [0,1] so a hallucinated "CONFIDENCE: 5" can't poison downstream weighting.
 
 
 # ── Backend invocation ─────────────────────────────────────────────
@@ -227,6 +252,9 @@ def judge(
     started = time.time()
     prompt = _build_prompt(pattern, context)
 
+    # BackendCascade — What: try the three backends in priority order (daemon, then
+    #     Ollama with a small-model retry, then llama-cli); the FIRST that returns raw
+    #     text wins and its parsed verdict is returned. Fall through to 'none' if all fail.
     # Backend 0: SAM/IA daemon (AUD28.7 V1) — daemon-routed, telemetry-emitting.
     raw = _judge_daemon(prompt, timeout_s)
     if raw is not None:
@@ -282,3 +310,30 @@ def judge(
         "model": None,
         "wall_ms": int((time.time() - started) * 1000),
     }
+    # BackendCascade — Why: the daemon path is first because it reuses an
+    #     already-warm model (no cold start); the small-model retry rescues a large-model
+    #     OOM/load failure without losing the request. A total failure returns
+    #     'unsure'/'none' (NOT an exception) because this sits on the gate hot path — the
+    #     auditor reads 'unsure' as "escalate to Tier 3/4", which is the safe default.
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.judge
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Tier 2b local-LLM permission judge + AUD28.7 V1 (daemon backend).
+# Layer:      core (library; called by samia.core.auditor's escalation path).
+# Role:       local-LLM auto-approval judge — cascades daemon/Ollama/llama-cli backends
+#             and parses a verdict dict; always answers, never raises, degrades to 'unsure'.
+# Stability:  stable -- verdict contract fixed; backends probed at runtime.
+# ErrorModel: judge() NEVER raises — every backend failure (daemon down, HTTP/OS
+#             error, JSON decode error, subprocess timeout) collapses to a
+#             well-formed verdict dict; total failure -> verdict='unsure',
+#             backend='none' (the auditor's signal to escalate to Tier 3/4).
+# Depends:    json, os, re, shutil, subprocess, time, urllib, typing (stdlib).
+#             samia.runtime.client (LAZY, _judge_daemon only). External: ollama,
+#             llama-cli (probed, optional).
+# Exposes:    judge, ensure_ollama_up.
+# Lines:      336
+# --------------------------------------------------------------------------

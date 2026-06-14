@@ -1,4 +1,4 @@
-"""Tests for the unified supersession-candidate store — FEAT-2026-06-07 P3b / R2.
+"""samia.runtime.test_supersession — tests for the unified supersession-candidate store (FEAT-2026-06-07 P3b / R2).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the CANONICAL supersession store now owned by
@@ -177,3 +177,18 @@ class TestR2Reconciliation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.runtime.test_supersession
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07-memory-rem-sleep-consolidation-cycle-v01 (P3b / R2)
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.contradiction, samia.runtime.memory_guard — unified supersession store schema, unresolved-only listing, atomic resolve, dedup, and R2 single-owner reconciliation
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.contradiction, samia.runtime.memory_guard
+# Exposes:    — (test module)
+# Lines:      196
+# ------------------------------------------------------------------------------

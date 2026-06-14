@@ -1,4 +1,4 @@
-"""test_semantic_recall — FEAT-2026-06-10 semantic recall arm + composer (P1).
+"""samia.core.test_semantic_recall — tests for the FEAT-2026-06-10 semantic recall arm + composer (P1).
 
 What: tmp-store tests for samia.core.semantic_recall (the atom arm + composer) and the
   flag-gated fx_-skip in samia.core.context_extension. Each test plants a self-contained
@@ -507,10 +507,16 @@ class TestEvidenceFocuser(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-# ---------------------------------------------------------------------------
-# Metadata
-#   project: SAM/IA semantic recall arm (FEAT-2026-06-10, P1)
-#   created: 2026-06-10  author: Claude (code-warrior)   version: 1.0.1
-#   contract: tmp stores only; never touches the live memory dir
-#   changelog: 1.0.1 footer added (verifier I2)
-# ---------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_semantic_recall
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-10 — semantic recall arm + composer (P1)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.semantic_recall + context_extension — atom-only population, chronological FACTS, source tags + budget truncation, flag-off byte-identity, flag-on FACTS/EVIDENCE split, fx_-skip gate, fraction/focuser env clamps, zero-atom + fail-soft paths
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.semantic_recall, samia.core.context_extension, samia.core.vector, samia.core.frontmatter
+# Exposes:    — (test module)
+# Lines:      524
+# ------------------------------------------------------------------------------

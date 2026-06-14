@@ -1,4 +1,4 @@
-"""Tests for the supersession MCP surface (override design B) — FEAT-2026-06-07 P3b.
+"""samia.core.test_supersession_mcp — tests for the supersession MCP surface, override design B (FEAT-2026-06-07 P3b).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the OVERRIDE-design supersession surface:
@@ -296,3 +296,18 @@ class TestForgetNodeWrapper(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_supersession_mcp
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 P3b — supersession MCP surface (operator OVERRIDE design B)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.mcp_server supersession surface — gated online auto-supersede (restorable exact-case retire, weaker-hit record-only), restorable confirm, byte-exact restore, dismiss, plus active-set primitives and the forget cascade
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.mcp_server, samia.core.web_store, samia.core.vector, samia.core.bio, samia.core.temporal, samia.core.ia, samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      315
+# ------------------------------------------------------------------------------

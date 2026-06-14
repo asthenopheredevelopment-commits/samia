@@ -1,4 +1,4 @@
-"""Tests for samia.core.temporal_recall_sith — FEAT-2026-06-11 temporal-recall P2.
+"""samia.core.test_temporal_recall_sith — tests for samia.core.temporal_recall_sith (FEAT-2026-06-11 temporal-recall P2).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the SITH temporal-context machinery (proposal §4 + §16.2 Q3):
@@ -400,17 +400,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_temporal_recall_sith] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
-# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P2 tests — SITH temporal-
-#             context term. Asserts: integrator update (ρ from dt/τ, unit-sphere
-#             renormalize, ρ=0 seed); coalescing REUSES the cadence gate
-#             (ASTHENOS_HEBB_MIN_INTERVAL_S) — burst buffers, tick advances on the mean;
-#             snapshot sidecar write-once-immutable + roundtrip; tc_term_hit read-out
-#             (gated unit on perfect match, 0 on missing); jump-back partial blend; and the
-#             FLAG-OFF / γ=0 byte-identity of chainogram_retrieve with the TC seam wired in.
-# Role:       prove P2's integrator/coalesce/sidecar/read-out math + flag-off identity
-# Depends:    temporal_recall_sith, context_extension, vector, bio; unittest, tempfile, os
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_temporal_recall_sith
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P2 (SITH temporal-context term, §4)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.temporal_recall_sith — leaky-integrator update (ρ from dt/τ, unit-sphere renorm, ρ=0 seed), cadence-gated coalescing, write-once snapshot sidecar, tc_term_hit read-out, jump-back blend, flag-off/γ=0 byte-identity
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.temporal_recall_sith, samia.core.context_extension, samia.core.vector, samia.core.bio, samia.core.hippocampus
+# Exposes:    — (test module)
+# Lines:      417
+# ------------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tests for the temporal-recall formula scaffold — FEAT-2026-06-11 P1.
+"""samia.core.test_temporal_scaffold — tests for the temporal-recall formula scaffold in samia.core.context_extension (FEAT-2026-06-11 P1).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the P1 scaffold installed in context_extension
@@ -322,17 +322,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_temporal_scaffold] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
-# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P1 tests — formula
-#             scaffold. Asserts: master flag ASTHENOS_TEMPORAL_WEIGHT default-OFF +
-#             per-term weights (γ/λN/λK/λD) default-0.0 + master-off forces all 0.0;
-#             θ=0.2 gate; min-max pool (degenerate→0); §16.2-Q5 compute-skip below ε;
-#             inert 0.0 term hooks; and the load-bearing FLAG-OFF BYTE-IDENTITY of
-#             chainogram_retrieve (flag-off AND flag-on-zero-weights) across the base
-#             path and the contextual variant vs a pinned baseline ordering.
-# Role:       prove P1's flag-off byte-identity + helper semantics
-# Depends:    context_extension; unittest, tempfile, json, os
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_temporal_scaffold
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P1 (formula scaffold, §2)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.context_extension temporal scaffold — master flag + per-term weights default 0.0, master-off forces 0.0, θ=0.2 gate, min-max pool, compute-skip below ε, inert term hooks, flag-off byte-identity across base + contextual paths
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.context_extension
+# Exposes:    — (test module)
+# Lines:      339
+# ------------------------------------------------------------------------------

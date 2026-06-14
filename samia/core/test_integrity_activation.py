@@ -1,4 +1,4 @@
-"""Tests for the integrity activation-wiring — FEAT-2026-06-07 granular-recall-repaired-decay.
+"""samia.core.test_integrity_activation — tests for the integrity env-flag activation wiring (FEAT-2026-06-07 granular-recall-repaired-decay).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the GRANULAR env-flag activation wiring that connects the
@@ -405,3 +405,23 @@ class TestRelevanceDecayUnaffected(_EnvCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_integrity_activation
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 granular-recall-repaired-decay (activation wiring)
+# Layer:      test (pytest)
+# Role:       tests for the integrity activation flags wiring tier.decay_tick +
+#             mcp_server.memory_search — default-off byte-identical, each of the
+#             REPAIR/DECAY/FREEZE flags engages its arm independently, explicit
+#             params override the env default, and relevance decay is unchanged.
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.integrity, samia.core.tier,
+#             samia.core.mcp_server, samia.core.frontmatter, samia.core.vector
+# Exposes:    — (test module)
+# Lines:      429
+# --------------------------------------------------------------------------

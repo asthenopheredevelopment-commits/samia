@@ -1,4 +1,4 @@
-"""Tests for samia.runtime.rem_cycle + samia.runtime.sleep_pressure (REM P1).
+"""samia.runtime.test_rem_cycle — tests for rem_cycle + sleep_pressure (REM P1).
 
 Layer 1 (Owns / Depends):
     Owns:    unit tests for the WAKE<->REM state machine (transitions persist +
@@ -409,12 +409,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_rem_cycle] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.runtime
-# Version:    1.0.0  Updated: 2026-06-07  Status: active
+# [Asthenosphere] samia.runtime.test_rem_cycle
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-07-memory-rem-sleep-consolidation-cycle-v01 (P1 tests)
-# Role:       unit tests — state machine round-trip, sleep-pressure composition,
-#             Q1 trigger, Q4 three wake paths (incl. the snooze)
-# Depends:    json, tempfile, unittest; samia.runtime.rem_cycle, sleep_pressure
-# ─────────────────────────────────────────────
+# Layer:      test (pytest)
+# Role:       tests for rem_cycle, sleep_pressure — state-machine round-trip, sleep-pressure composition, Q1 trigger, Q4 three wake paths
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.rem_cycle, samia.runtime.sleep_pressure
+# Exposes:    — (test module)
+# Lines:      426
+# ------------------------------------------------------------------------------

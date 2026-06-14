@@ -1,4 +1,4 @@
-"""temporal_recall_stc.py -- synaptic tagging-and-capture term (P4).
+"""samia.core.temporal_recall_stc -- synaptic tagging-and-capture term (P4).
 
 Layer 1 (Owns / Depends):
     Owns:    The STC (Synaptic Tagging-and-Capture) machinery of the temporal-recall
@@ -67,7 +67,7 @@ import numpy as np
 from .atomic_state import locked_update_json
 
 # ── Capture parameters (§6.6 seeds; all join the joint-calibration vector later) ────
-# STC_STRONG_THRESHOLD -- What: the salience floor a write must clear to be a STRONG
+# STC_STRONG_THRESHOLD — What: the salience floor a write must clear to be a STRONG
 #   anchor (and so capture its weak neighbours).
 # Why: §6.2 — reuse the existing compute_salience signal; 0.70 sits BELOW
 #   SALIENCE_PROMOTE_THRESHOLD (0.8) on purpose: a write can rescue its weak neighbours
@@ -96,7 +96,7 @@ def _strong_threshold() -> float:
     return v if 0.0 <= v <= 1.0 else STC_STRONG_THRESHOLD
 
 
-# STC_WINDOW_BACK_N / _FWD_M -- What: the EPISODE_SEQ-relative capture window — the N
+# STC_WINDOW_BACK_N / _FWD_M — What: the EPISODE_SEQ-relative capture window — the N
 #   nearest episodes BEFORE the anchor and the M nearest AFTER, by counter (§16.2 Q2).
 # Why: N > M preserves the strong-before-weak biological asymmetry (a strong event
 #   rescues weak memories that PRECEDED it over a longer ordinal span than ones that
@@ -107,7 +107,7 @@ def _strong_threshold() -> float:
 STC_WINDOW_BACK_N = 9
 STC_WINDOW_FWD_M = 3
 
-# STC_WALLCLOCK_CAP_S -- What: the wall-clock cap (seconds) bounding the human-side span
+# STC_WALLCLOCK_CAP_S — What: the wall-clock cap (seconds) bounding the human-side span
 #   of the episode_seq window (§16.2 Q2 — "with a wall-clock cap").
 # Why: at human pacing a few episodes can straddle days; the cap keeps a capture from
 #   reaching across an unboundedly long real-time gap even when only a few episodes
@@ -115,35 +115,35 @@ STC_WINDOW_FWD_M = 3
 #   = the §6.3 back-arm (9h) so the human-side bound matches the prior wall-clock span.
 STC_WALLCLOCK_CAP_S = 9 * 3600.0
 
-# STC_COSINE_GATE -- What: the semantic floor a weak node's embedding must clear vs the
+# STC_COSINE_GATE — What: the semantic floor a weak node's embedding must clear vs the
 #   anchor to be captured.
 # Why: §6.4 guard 1 — temporal adjacency alone is too permissive; capture is
 #   dendritic-compartment-LOCAL, not cell-wide. Reuses the uniform θ=0.2 the whole
 #   temporal subsystem shares (one cosine floor across TĈ + STC).
 STC_COSINE_GATE = 0.20
 
-# STC_RATE_LIMIT_S -- What: the per-chain rolling rate-limit window (seconds): at most
+# STC_RATE_LIMIT_S — What: the per-chain rolling rate-limit window (seconds): at most
 #   ONE capture event per chain per hour.
 # Why: §6.4 guard 2 — the homeostatic brake (biological capture is resource-limited),
 #   preventing STC from being farmed into a flat high baseline. Enforced with the same
 #   flock + atomic-replace discipline (locked_update_json) as the episode_seq counter.
 STC_RATE_LIMIT_S = 3600.0
 
-# STC_CAPTURE_SCORE -- What: the [0,1] score a fresh capture stamps (pre-attenuation).
+# STC_CAPTURE_SCORE — What: the [0,1] score a fresh capture stamps (pre-attenuation).
 # Why: a full tag at the moment of capture; it then decays with STC_HALFLIFE_DAYS so the
 #   rescue is transient (§6.5 effect 3). Seed 1.0 (a fresh tag is maximal); the recall
 #   modulator is min-max pooled across the candidate set anyway, so the absolute value
 #   matters only relative to the half-life attenuation.
 STC_CAPTURE_SCORE = 1.0
 
-# STC_HALFLIFE_DAYS -- What: the half-life (days) of the stored stc_capture_score.
+# STC_HALFLIFE_DAYS — What: the half-life (days) of the stored stc_capture_score.
 # Why: §6.5 effect 3 — biological tags clear within hours-to-a-day; a PERMANENT rescue
 #   would let one salient write immortalize arbitrary neighbours. After ~3 days the
 #   rescue has half-faded; after ~2 weeks it is negligible and the node resumes its
 #   intrinsic decay. Shared by recall/promotion/decay so all three read the SAME scalar.
 STC_HALFLIFE_DAYS = 3.0
 
-# STC_PROMOTE_THRESHOLD -- What: the (attenuated) stc_capture_score at/above which a weak
+# STC_PROMOTE_THRESHOLD — What: the (attenuated) stc_capture_score at/above which a weak
 #   node becomes promotion-eligible via the OR-gate's third arm.
 # Why: §6.5 effect 2 — the direct realization of synaptic capture: a weak memory is
 #   rescued into the long-term (engram) store by its strong neighbour, WITHOUT meeting
@@ -517,30 +517,44 @@ def capture_event(memory_dir: Path, anchor_node: str,
         return {"fired": False, "captured": [], "reason": "error"}
 
 
-# ── module metadata ────────────────────────────────────────────────────────
-# file:        samia/core/temporal_recall_stc.py
-# role:        synaptic tagging-and-capture (STC) term of the temporal-recall layer
-# phase:       FEAT-2026-06-11-memory-temporal-recall-formula-v01 P4 (§6 + §16.2 Q2).
-#              Builds the write-time capture trigger (strong anchor -> stamp a decaying
-#              stc_capture_score on weak neighbours inside an EPISODE_SEQ-relative window
-#              — N before / M after, N>M — with a wall-clock cap; cosine + 1/chain/hour
-#              guards), the recall read-out (max over chain members), and the shared
-#              ~3-day half-life attenuation consumed by recall / promotion / decay.
-# supersession: §16.2 Q2 — the window is EPISODE_SEQ-relative (burst-invariant), NOT the
-#              §6.3 wall-clock [t−9h,t+3h]; the wall-clock cap (written_at) only bounds
-#              the human-side span. A term whose λK < ε compute-skips its read (§16.2 Q5).
-# owns:        <memory_dir>/biomimetic/stc_events.json (per-chain rate-limit ledger);
-#              the additive-optional `stc_capture_score` + `stc_capture_at` node
-#              frontmatter scalars (beside `salience`).
-# reuses:      atomic_state.locked_update_json (the rate-limit ledger — no new lock),
-#              bio._node_embedding / _addr_for_node, frontmatter.read_node/write_node,
-#              context_extension.temporal_weight_enabled (the master flag).
-# flag:        INERT under ASTHENOS_TEMPORAL_WEIGHT off — capture writes NO frontmatter,
-#              so the decay / promotion / recall paths are byte-identical to today. With
-#              the flag on but λK = 0 the recall read-out is compute-skipped. A legacy
-#              node lacking episode_seq/written_at is skipped (additive-optional, no
-#              migration); a missing/expired stc_capture_score reads 0.0 (fail-open).
-# consumers:   context_extension._stc_term_chain (recall λK modulator),
-#              hippocampus.promote_ring_pointer (promotion OR-gate third arm),
-#              tier.step_relevance (decay damping), bio (capture trigger at write).
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.temporal_recall_stc
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P4 (§6 + §16.2 Q2).
+#             Builds the write-time capture trigger (strong anchor -> stamp a decaying
+#             stc_capture_score on weak neighbours inside an EPISODE_SEQ-relative window
+#             — N before / M after, N>M — with a wall-clock cap; cosine + 1/chain/hour
+#             guards), the recall read-out (max over chain members), and the shared
+#             ~3-day half-life attenuation consumed by recall / promotion / decay.
+#             Supersession: §16.2 Q2 — the window is EPISODE_SEQ-relative (burst-
+#             invariant), NOT the §6.3 wall-clock [t−9h,t+3h]; the wall-clock cap
+#             (written_at) only bounds the human-side span; λK < ε compute-skips the
+#             read (§16.2 Q5).
+# Layer:      core (pure library, no daemon dependency)
+# Role:       compute the multiplicative STC capture modulator K̂_c (tagging-and-capture)
+# Stability:  stable -- v1.0.0; additive-optional. INERT under ASTHENOS_TEMPORAL_WEIGHT
+#             off — capture writes NO frontmatter, so decay / promotion / recall are
+#             byte-identical to today; flag-on but λK=0 compute-skips the recall read-out.
+# ErrorModel: fail-soft throughout — capture_event swallows every error and returns a
+#             diagnostic {"fired": False, ...}; _stamp_capture returns False on a write
+#             failure; the read-outs return 0.0 on unreadable/absent state. A legacy node
+#             lacking episode_seq/written_at is skipped (no migration); a missing/expired
+#             stc_capture_score reads 0.0 (fail-open). Rate-limit ledger + frontmatter
+#             writes go through locked_update_json / frontmatter.write_node.
+# Depends:    numpy; atomic_state (locked_update_json — the rate-limit ledger, no new
+#             lock); bio (_node_embedding/_addr_for_node — REUSED); frontmatter
+#             (read_node/write_node); temporal (parse_date / st_mtime fallbacks);
+#             context_extension (temporal_weight_enabled — the master flag). stdlib
+#             (json, time, pathlib).
+# Exposes:    current_capture_score, attenuate, stc_chain_score, capture_event.
+#             Owns <memory_dir>/biomimetic/stc_events.json (per-chain rate-limit ledger)
+#             + the `stc_capture_score`/`stc_capture_at` node frontmatter scalars.
+#             Constants: STC_STRONG_THRESHOLD(+_ENV), STC_WINDOW_BACK_N/_FWD_M,
+#             STC_WALLCLOCK_CAP_S, STC_COSINE_GATE, STC_RATE_LIMIT_S, STC_CAPTURE_SCORE,
+#             STC_HALFLIFE_DAYS, STC_PROMOTE_THRESHOLD.
+# Consumers:  context_extension._stc_term_chain (recall λK modulator),
+#             hippocampus.promote_ring_pointer (promotion OR-gate third arm),
+#             tier.step_relevance (decay damping), bio (capture trigger at write).
+# Lines:      557
+# --------------------------------------------------------------------------

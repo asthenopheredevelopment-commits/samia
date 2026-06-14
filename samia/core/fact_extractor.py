@@ -1,35 +1,46 @@
 """samia.core.fact_extractor — LLM-based fact extractor for SAM/IA memory.
 
-Carved from memory_fact_extractor.py. Decomposes a long blob into atomic
-memory facts so each becomes its own SAM node instead of one monolithic
-write.
+Layer 1 (Owns / Depends):
+    Owns:    extract_atoms — decompose a blob into atomic-fact dicts via a backend
+                 OBJECT (local model), a STRING route (rule/anthropic/auto), with a
+                 fail-soft drop to the rule splitter.
+             write_atoms_as_nodes — persist atoms as SAM .md nodes (stamps
+                 temporal-substrate fields + best-effort salience).
+             enqueue_for_extraction — the queue PRODUCER (sentinel-guarded JSONL
+                 append). extract_atoms_rule — the deterministic structural splitter.
+             fact_extract_enabled, fact_extract_model — the env-flag readers.
+    Depends: stdlib only (datetime, json, os, re, sys, pathlib). Optional/lazy:
+             anthropic (SDK), samia.core.integrity (EROSION_SENTINEL guard),
+             samia.core.temporal_substrate (write-time fields), samia.core.bio
+             (salience) — all imported lazily and fail-soft.
+Layer 2 (What / Why):
+    What: turns one long blob into many atomic facts so each becomes its OWN node
+          instead of a monolithic write. Backends: `rule` (deterministic structural
+          splitter, always available), `anthropic` (Claude haiku, strict-JSON), and
+          a duck-typed local backend OBJECT (BitNet/Qwen via .chat/.complete) — the
+          object + anthropic paths share _parse_llm_atoms so the atom shape
+          {title, description, body, type, chains, valid_from, valid_to} is identical
+          regardless of model. enqueue_for_extraction appends an extraction request
+          to <mem>/.fact_extract_queue.jsonl; the daemon drain later calls
+          extract_atoms + write_atoms_as_nodes.
+    Why:  atomic facts are individually recallable/decayable, so splitting beats one
+          blob node. Every LLM path fails SOFT — empty/unparseable output drops to
+          the rule splitter (never returns []) — so a flaky local model degrades
+          gracefully. The PRODUCER + drain are gated on ASTHENOS_FACT_EXTRACT_ENABLED
+          (default OFF), making flag-off a byte-identical no-op (no queue file, no
+          new nodes); a LIVE env read (not an import-time const) lets a test/daemon
+          flip the flag without re-import. The sentinel guard refuses to distil an
+          eroded/masked body. Atoms are ADDITIVE full-citizen nodes — nothing here
+          deletes, archives, or supersedes a source (Q3a keep+link).
 
-Two backends:
-    rule       — structural splitter, deterministic, always available.
-    anthropic  — Claude (claude-haiku-4-5) with strict JSON schema; auto
-                 selected when ANTHROPIC_API_KEY is set; rule fallback.
-
-Atom schema:
-    {title, description, body, type, chains, valid_from, valid_to}
-    type ∈ {feedback, project, user, reference}
-
-Public API (parameterized on memory_dir for the writer):
-    extract_atoms(text, backend="auto", chains_hint=None) → list[dict]
-    write_atoms_as_nodes(memory_dir, atoms, prefix="atom",
-                         dry_run=False) → list[str]
-    enqueue_for_extraction(memory_dir, text, source, enqueued_by) → dict
-    fact_extract_enabled() → bool
-
-FEAT-2026-06-10-memory-fact-extract-producer-v01 P1 (PRODUCER, inert):
-    The queue <mem>/.fact_extract_queue.jsonl had a drain (rem_subscribers
-    ._sub_fact_extract) but NO producer — the subscriber was perpetually no-op.
-    enqueue_for_extraction is that producer (called from ia.freeze for session-
-    offload bodies + merge_consumer's 'abstract' distinct pairs). Records are
-    {"text","source","enqueued_by","ts"} — backward-compatible with the old
-    drain, which reads only "text". Everything is gated on
-    ASTHENOS_FACT_EXTRACT_ENABLED (default OFF): flag-off is a byte-identical
-    no-op (zero new files). Atoms are ADDITIVE full-citizen semantic nodes;
-    nothing here deletes/archives/supersedes a source (Q3a keep+link).
+Layer 3 (Changelog):
+    Carved from memory_fact_extractor.py. FEAT-2026-06-10 P1 added the queue PRODUCER
+    (enqueue_for_extraction) + flag readers (inert by default). FIX-2026-06-10 (HIGH):
+    extract_atoms now accepts a duck-typed local backend OBJECT routed through the
+    shared _parse_llm_atoms (the drain previously passed an object that fell to a
+    'name'->'auto' string and never used the model). TUNE-2026-06-10 added the junk
+    filter + the templated chat() path + llm_only persistence guard. (Full file
+    metadata in the footer block below.)
 """
 
 from __future__ import annotations
@@ -171,6 +182,8 @@ def _first_sentence(s: str, max_chars: int = 110) -> str:
     return out
 
 
+# _classify_type — What: heuristic keyword vote mapping a fact's text to one of
+#     feedback / user / reference / project (the default).
 def _classify_type(text: str) -> str:
     t = text.lower()
     if any(k in t for k in ("don't", "do not", "stop ", "always ", "never ",
@@ -184,6 +197,9 @@ def _classify_type(text: str) -> str:
                             "https://", "linear", "grafana")):
         return "reference"
     return "project"
+# _classify_type — Why: the rule splitter has no model to label atoms, so a cheap
+#     lexical guess gives the node a usable `type` facet; the LLM paths override this with
+#     a real classification, so a coarse heuristic is acceptable for the fallback only.
 
 
 def _extract_dates(text: str) -> tuple[str | None, str | None]:
@@ -194,6 +210,9 @@ def _extract_dates(text: str) -> tuple[str | None, str | None]:
     return iso[0], (iso[-1] if len(iso) > 1 else None)
 
 
+# _split_units — What: split a blob into candidate fact units, trying the strongest
+#     structural signal first — bullet/numbered list, then **Why:**-paragraph form, then
+#     blank-line paragraphs, and finally sentence-pair grouping for a single paragraph.
 def _split_units(text: str) -> list[str]:
     text = text.strip()
     if not text:
@@ -230,8 +249,15 @@ def _split_units(text: str) -> list[str]:
             out.append(sents[i])
             i += 1
     return out
+# _split_units — Why: the splitter degrades from explicit structure to inferred
+#     structure so a well-formatted blob keeps the author's own boundaries, while prose
+#     still gets reasonable units. Adjacent short sentences are merged (<200 chars) so a
+#     single fact spanning two sentences isn't fragmented into two thin atoms.
 
 
+# extract_atoms_rule — What: the deterministic backend — split the blob into units and
+#     build one atom dict per unit (title/desc from its first sentence, dates scanned
+#     from the unit, type from the keyword heuristic), dropping units under 12 chars.
 def extract_atoms_rule(text: str,
                        chains_hint: list[str] | None = None) -> list[dict]:
     units = _split_units(text)
@@ -253,6 +279,9 @@ def extract_atoms_rule(text: str,
             "valid_to": vt,
         })
     return atoms
+# extract_atoms_rule — Why: always-available + deterministic, this is the fail-soft floor
+#     every LLM path drops to, so it must never raise; the 12-char minimum discards
+#     noise units (stray punctuation, list markers) that would otherwise become junk nodes.
 
 
 LLM_SYSTEM = """You decompose a blob of text into atomic memory facts for a long-term memory system.
@@ -284,6 +313,9 @@ Rules:
 """
 
 
+# _llm_anthropic — What: extract atoms via Claude haiku — build the user message
+#     (today + chain hints + blob), call messages.create under LLM_SYSTEM, and route the
+#     reply through the shared _parse_llm_atoms. None on missing SDK/key or any failure.
 def _llm_anthropic(text: str,
                    chains_hint: list[str] | None) -> list[dict] | None:
     try:
@@ -320,6 +352,10 @@ def _llm_anthropic(text: str,
         print("[fact_extractor] could not parse LLM JSON; falling back",
               file=sys.stderr)
     return atoms
+# _llm_anthropic — Why: shares the JSON-array contract + parser with the local-backend
+#     path so atom shape is model-independent; every failure mode (no SDK, no key, API
+#     error, unparseable JSON) returns None — the fail-soft signal extract_atoms reads as
+#     "drop to the rule splitter" — so a cloud outage never blocks extraction.
 
 
 def _parse_llm_atoms(out: str, chains_hint: list[str] | None) -> list[dict] | None:
@@ -486,6 +522,10 @@ def extract_atoms(text: str, backend: object = "auto",
     return extract_atoms_rule(text, chains_hint=chains_hint)
 
 
+# write_atoms_as_nodes — What: persist each atom as a SAM .md node — build its
+#     frontmatter (validity, tier, runtime, extracted=true) + body, stamp per-atom
+#     temporal-substrate fields, write it, then best-effort stamp salience. Returns the
+#     written filenames (computed-but-unwritten under dry_run).
 def write_atoms_as_nodes(memory_dir: Path, atoms: list[dict],
                          prefix: str = "atom",
                          dry_run: bool = False,
@@ -558,12 +598,18 @@ def write_atoms_as_nodes(memory_dir: Path, atoms: list[dict],
                 pass  # salience is additive; never let it break the atom write
         written.append(path.name)
     return written
+# write_atoms_as_nodes — Why: the atom is the durable artifact, so the write is the one
+#     step that must not fail — both the substrate-fields stamp and the salience stamp are
+#     swallowed best-effort additions around it (a hiccup omits a field, never drops the
+#     node). A FRESH episode_seq per atom is required because one burst fans many atoms in
+#     the same wall-clock second, which would otherwise collide the directed-SR ordering.
 
 
 # ─────────────────────────────────────────────
-# [fact_extractor] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.2.0  Updated: 2026-06-10  Status: active
+# [Asthenosphere] samia.core.fact_extractor
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      carved from memory_fact_extractor.py (extract_atoms primitive)
 #             + FEAT-2026-06-10-memory-fact-extract-producer-v01 (P1: the PRODUCER
 #               + flag readers — enqueue_for_extraction appends sentinel-guarded
@@ -576,12 +622,20 @@ def write_atoms_as_nodes(memory_dir: Path, atoms: list[dict],
 #               anthropic path). The drain passes the configured BitNet backend
 #               OBJECT (was a 'name'->'auto' string that never used the model);
 #               empty/unparseable output fails soft to the rule splitter.
+# Layer:      core (pure library, no daemon dependency)
 # Role:       decompose a blob into atomic semantic facts + enqueue write-time
 #             extraction requests (the queue's first producer)
-# Depends:    datetime, json, os, re, sys, pathlib (stdlib);
-#             samia.core.integrity (lazy, EROSION_SENTINEL guard, fail-open)
-# Note:       ADDITIVE — atoms are full-citizen nodes; NOTHING here deletes,
-#             archives, or supersedes a source (Q3a keep+link). enqueue itself is
-#             ungated (testable directly); every LIVE caller wraps it in
-#             fact_extract_enabled() so flag-off writes zero new files.
-# ─────────────────────────────────────────────
+# Stability:  stable primitive; the PRODUCER chain is inert by default
+#             (ASTHENOS_FACT_EXTRACT_ENABLED off) — flag-off is a byte-identical no-op
+# ErrorModel: fail-soft — every LLM path drops to the rule splitter (never returns
+#             []); the freeze/salience/substrate side-effects are swallowed
+#             best-effort; the EROSION_SENTINEL guard refuses an eroded body. The
+#             rule splitter must never raise. ADDITIVE — nothing here deletes,
+#             archives, or supersedes a source (Q3a keep+link)
+# Depends:    datetime, json, os, re, sys, pathlib (stdlib); optional/lazy:
+#             anthropic (SDK), samia.core.integrity (EROSION_SENTINEL guard,
+#             fail-open), samia.core.temporal_substrate, samia.core.bio (salience)
+# Exposes:    extract_atoms, extract_atoms_rule, write_atoms_as_nodes,
+#             enqueue_for_extraction, fact_extract_enabled, fact_extract_model
+# Lines:      638
+# --------------------------------------------------------------------------

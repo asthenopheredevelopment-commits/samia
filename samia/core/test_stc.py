@@ -1,4 +1,4 @@
-"""Tests for samia.core.temporal_recall_stc — FEAT-2026-06-11 temporal-recall P4.
+"""samia.core.test_stc — tests for samia.core.temporal_recall_stc (FEAT-2026-06-11 temporal-recall P4).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the STC tagging-and-capture machinery (proposal §6 + §16.2 Q2):
@@ -646,3 +646,18 @@ class TestFlagOffByteIdentity(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_stc
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11 temporal-recall P4 — STC tagging-and-capture (§6 + §16.2 Q2)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.temporal_recall_stc — episode_seq window scoping (not wall-clock), cosine/strong-to-weak/rate-limit guards, the three effects (recall max-over-members, promotion OR-gate arm, decay damping), and flag-off byte-identity
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.temporal_recall_stc, samia.core.context_extension, samia.core.tier, samia.core.hippocampus, samia.core.bio, samia.core.vector, samia.core.frontmatter
+# Exposes:    — (test module)
+# Lines:      665
+# ------------------------------------------------------------------------------

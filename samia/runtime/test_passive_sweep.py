@@ -1,4 +1,4 @@
-"""Tests for the PASSIVE supersession sweep — FEAT-2026-06-07 P3c.
+"""samia.runtime.test_passive_sweep — tests for the PASSIVE supersession sweep (FEAT-2026-06-07 P3c).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the REM-subscriber PASSIVE arm of the P3 detector:
@@ -355,3 +355,22 @@ class TestRegistration(_RegistryIsolation):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.test_passive_sweep
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 P3c (REM-subscriber passive supersession sweep)
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.contradiction, samia.runtime.rem_cycle,
+#             samia.runtime.rem_subscribers — gated-off no-op, incremental cursor
+#             advance/wrap, confirmed restorable auto-supersede, rejected-recorded,
+#             REM-only subscriber registration at priority 25
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.contradiction, samia.runtime.rem_cycle, samia.runtime.rem_subscribers, samia.core.ia
+# Exposes:    — (test module)
+# Lines:      378
+# --------------------------------------------------------------------------

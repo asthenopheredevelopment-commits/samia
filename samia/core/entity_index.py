@@ -1,24 +1,26 @@
 """samia.core.entity_index — inter-chain entity-bridge index.
 
-Carved from memory_entity_index.py. The library plane carries all logic
-so the daemon can call build_index/query_bridges directly.
-
-Extracts named entities and technical identifiers from each live node,
-inverts to build entity → [nodes]. At retrieval time, entities found in
-the query expand the candidate set to bridge across chains that the
-within-chain Hebbian traversal would miss.
-
-Pattern: Graphiti / Zep entity-bridge edges, but without a graph DB —
-the inverted index is a single JSON file regenerated on demand.
-
-Public API (parameterized on memory_dir):
-  build_index(memory_dir) → dict
-  load_index(memory_dir) → dict | None
-  query_bridges(memory_dir, query, max_bridge_nodes=8, min_entity_len=3) → dict
-  extract_entities(text) → set[str]
-
-Acceptance: byte-identical to pre-refactor memory_entity_index.py CLI
-behavior on the same memory tree.
+Layer 1 (Owns / Depends):
+    Owns:    build_index, load_index, query_bridges, extract_entities — build the
+             entity → [nodes] inverted index, load it, expand a query's entities
+             into bridge-node candidates, and the entity/identifier extractor those
+             three share. All parameterized on memory_dir.
+    Depends: stdlib only (json, re, pathlib).
+Layer 2 (What / Why):
+    What: extract_entities pulls named entities and technical identifiers
+          (backtick spans, hyphen/underscore identifiers, file names, ALLCAPS acronyms,
+          issue/version tokens, Capitalized phrases) from each live node, and the
+          index inverts them to entity → [nodes]. At retrieval time, entities found in
+          the query (query_bridges) expand the candidate set across chains.
+    Why:  the within-chain Hebbian traversal only walks edges inside one chain, so a
+          fact that connects two chains by a shared entity is invisible to it. The
+          inverted index supplies those cross-chain bridges. Pattern: Graphiti / Zep
+          entity-bridge edges, but without a graph DB — a single JSON file regenerated
+          on demand. The stoplists prune generic tokens so a bridge means a shared
+          SPECIFIC entity, not a shared common word.
+Layer 3 (Changelog):
+    (carved from memory_entity_index.py — library plane extracted from the original CLI;
+     byte-identical to the pre-refactor CLI behavior on the same memory tree.)
 """
 
 from __future__ import annotations
@@ -27,12 +29,18 @@ import json
 import re
 from pathlib import Path
 
+# ALLCAPS_STOP — What: ALLCAPS tokens that look like acronyms but carry no bridging value.
 ALLCAPS_STOP = {
     "NOT", "AND", "OR", "BUT", "FOR", "THE", "ALL", "NEW", "API", "WHY",
     "HOW", "WHAT", "WHEN", "TODO", "FIXME", "BUG", "NB", "WAS", "ARE",
     "AKA", "TBD", "ETA", "FYI", "URL", "HTTP", "HTTPS", "JSON", "HTML",
     "CSS", "XML", "YAML", "UTF",
 }
+# ALLCAPS_STOP — Why: the ALLCAPS regex would otherwise index generic English/protocol
+#     words as entities, creating spurious bridges between unrelated chains.
+
+# COMMON_HYPHEN_STOP — What: hyphen/underscore tokens (and a few phrases) that match the
+#     identifier regexes but are generic connectors or frontmatter keys, not entities.
 COMMON_HYPHEN_STOP = {
     "as-is", "at-least", "make-or", "one-off", "up-to", "drop-in",
     "off-the", "out-of", "as-of", "in-flight", "in-progress", "at-spi",
@@ -47,6 +55,9 @@ COMMON_HYPHEN_STOP = {
     "review_count", "next_review", "review_interval_days",
     "easiness_factor", "relevance",
 }
+# COMMON_HYPHEN_STOP — Why: frontmatter keys (valid_from, last_access, …) and generic
+#     hyphenated phrases recur in nearly every node, so without this stoplist they would
+#     bridge ALL chains and drown the genuine entity signal.
 
 
 def _nodes_dir(memory_dir: Path) -> Path:
@@ -57,6 +68,9 @@ def _index_path(memory_dir: Path) -> Path:
     return memory_dir / "vector_index" / "entity_bridges.json"
 
 
+# extract_entities — What: collect the lowercased entity/identifier set from one node's
+#     text across six pattern families (code spans, hyphen/underscore ids, file names,
+#     ALLCAPS acronyms, issue/version tokens, Capitalized multi-word phrases).
 def extract_entities(text: str) -> set[str]:
     ents: set[str] = set()
 
@@ -91,8 +105,14 @@ def extract_entities(text: str) -> set[str]:
             ents.add(s)
 
     return ents
+# extract_entities — Why: a node bridges another only on a SHARED specific entity, so each
+#     family targets a class of stable identifier (a path, an acronym, an issue id) and the
+#     length/stoplist guards drop generic words; lowercasing makes the match case-insensitive.
 
 
+# build_index — What: scan every nodes/*.md, extract its entities, and write the inverted
+#     entity → [nodes] map (plus per-node entity lists and bridge/singleton counts) to
+#     vector_index/entity_bridges.json; return the same dict.
 def build_index(memory_dir: Path) -> dict:
     nodes_dir = _nodes_dir(memory_dir)
     index_path = _index_path(memory_dir)
@@ -127,6 +147,9 @@ def build_index(memory_dir: Path) -> dict:
     index_path.parent.mkdir(parents=True, exist_ok=True)
     index_path.write_text(json.dumps(out, indent=2))
     return out
+# build_index — Why: the index is regenerated on demand (no graph DB, no incremental
+#     maintenance), so the whole nodes/ tree is rescanned each build; a read OSError on one
+#     node is skipped rather than aborting the build.
 
 
 def load_index(memory_dir: Path) -> dict | None:
@@ -136,6 +159,9 @@ def load_index(memory_dir: Path) -> dict | None:
     return json.loads(index_path.read_text(encoding="utf-8"))
 
 
+# query_bridges — What: given a free-text query, derive its entities, look each up in the
+#     loaded index, and return the top-N nodes that share those entities (each scored by the
+#     rarity-weighted count of matched entities), plus the matched entities and a rationale.
 def query_bridges(memory_dir: Path, query: str,
                   max_bridge_nodes: int = 8,
                   min_entity_len: int = 3) -> dict:
@@ -147,6 +173,8 @@ def query_bridges(memory_dir: Path, query: str,
 
     q_ents = extract_entities(query)
 
+    # KnownTokenAugment — What: also add any single token / adjacent-token bigram of the
+    #     query that already EXISTS as an index entity, beyond what extract_entities found.
     q_lower = query.lower()
     for tok in re.findall(r"[A-Za-z][A-Za-z0-9_\-./]{2,}", q_lower):
         if tok in known:
@@ -157,12 +185,18 @@ def query_bridges(memory_dir: Path, query: str,
         bg = f"{tokens[i]} {tokens[i+1]}"
         if bg in known:
             q_ents.add(bg)
+    # KnownTokenAugment — Why: extract_entities applies the same length/stoplist guards to
+    #     the query as to nodes, so a real index entity phrased plainly in the query could be
+    #     missed; gating the augmentation on `tok in known` only ever adds entities the index
+    #     can actually bridge on, never noise.
 
     q_ents = {e for e in q_ents if len(e) >= min_entity_len}
     if not q_ents:
         return {"matched_entities": [], "bridge_nodes": [],
                 "rationale": "no entities matched index"}
 
+    # RarityWeightedScore — What: accumulate a per-node score across matched entities, where
+    #     each entity contributes 1/len(nodes-it-appears-in) to every node it touches.
     node_scores: dict[str, dict] = {}
     matched: list[str] = []
     for e in q_ents:
@@ -175,6 +209,9 @@ def query_bridges(memory_dir: Path, query: str,
             d = node_scores.setdefault(n, {"score": 0.0, "entities": []})
             d["score"] += weight
             d["entities"].append(e)
+    # RarityWeightedScore — Why: a rare entity (in few nodes) is a stronger bridge signal
+    #     than a common one (an inverse-document-frequency weighting), so 1/len(nodes) up-
+    #     weights the distinctive shared entities that actually connect two chains.
 
     ordered = sorted(node_scores.items(), key=lambda kv: -kv[1]["score"])
     bridge_nodes = [
@@ -188,3 +225,24 @@ def query_bridges(memory_dir: Path, query: str,
                       f"{len(node_scores)} bridge candidates → "
                       f"top {len(bridge_nodes)}"),
     }
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.entity_index
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Carved from memory_entity_index.py (library plane extraction).
+# Layer:      core (pure library, no daemon dependency)
+# Role:       the cross-chain entity-bridge index — invert nodes to shared specific
+#             entities so a query expands its candidate set across chains.
+# Stability:  stable -- inter-chain entity-bridge index; API parameterized on memory_dir.
+# ErrorModel: query_bridges returns {"error": ...} when no index has been built, and an
+#             empty bridge set when the query yields no indexed entities; build_index skips
+#             a node it cannot read (OSError) rather than aborting; load_index returns None
+#             when the index file is absent.
+# Depends:    json, re, pathlib (stdlib only).
+# Exposes:    build_index, load_index, query_bridges, extract_entities.
+#             Constants: ALLCAPS_STOP, COMMON_HYPHEN_STOP.
+# Lines:      243
+# --------------------------------------------------------------------------

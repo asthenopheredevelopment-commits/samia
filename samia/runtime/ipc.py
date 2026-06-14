@@ -114,10 +114,14 @@ class IPCServer:
 
     def connected_client_count(self) -> int:
         """Return the number of currently active client handler threads."""
+        # ClientCount — What: prune finished handler threads, then count the live ones.
         with self._clients_lock:
             # Prune dead threads while we're here.
             self._client_threads = [t for t in self._client_threads if t.is_alive()]
             return len(self._client_threads)
+        # ClientCount — Why: handler threads are daemon threads that exit on their own when a
+        #     client disconnects, so the list accumulates dead entries; pruning under the lock
+        #     keeps the count accurate without a separate reaper thread.
 
     # -- Built-in ops -----------------------------------------------------
 
@@ -155,17 +159,25 @@ class IPCServer:
                 "error": f"unknown op: {op!r}",
             }
 
+        # HandlerGuard — What: run the resolved handler and wrap any exception it raises into
+        #     an ok=False error response instead of letting it escape.
         try:
             result = handler(args)
             return {"ok": True, "result": result, "error": None}
         except Exception as exc:
             _log.exception("op %r raised", op)
             return {"ok": False, "result": None, "error": str(exc)}
+        # HandlerGuard — Why: a handler exception must not kill the connection handler thread
+        #     or crash the daemon; the client gets a structured error and the server keeps
+        #     serving — builtins are checked before the plugin registry so a plugin cannot
+        #     shadow a built-in op.
 
     # -- Connection handler -----------------------------------------------
 
     def _handle_connection(self, conn: socket.socket, addr: Any) -> None:
         """Serve requests on one connection until it closes or server stops."""
+        # ConnectionLoop — What: read into a byte buffer and dispatch every complete
+        #     newline-terminated line, until the peer closes or the server is stopping.
         conn.settimeout(self._request_timeout)
         buf = b""
         try:
@@ -194,6 +206,11 @@ class IPCServer:
                 conn.close()
             except OSError:
                 pass
+        # ConnectionLoop — Why: the JSON-line protocol frames messages by newline, so a recv
+        #     may return a partial line or several lines; buffering across recvs handles both.
+        #     The settimeout makes recv periodically return (socket.timeout) so a stopping
+        #     server is observed without blocking forever, and conn.close() in finally
+        #     guarantees the fd is released on every exit path.
 
     def _process_line(self, conn: socket.socket, line: bytes) -> None:
         """Parse one JSON line, dispatch, and send the response."""
@@ -229,6 +246,8 @@ class IPCServer:
 
     def _accept_loop(self) -> None:
         """Accept connections until stop event is set."""
+        # AcceptLoop — What: accept each incoming connection and hand it to a fresh daemon
+        #     handler thread, tracked under the clients lock, until the stop event is set.
         while not self._stop_event.is_set():
             try:
                 if self._server_sock is None:
@@ -246,11 +265,16 @@ class IPCServer:
             t.start()
             with self._clients_lock:
                 self._client_threads.append(t)
+        # AcceptLoop — Why: one thread per connection keeps the model simple at the 1-3 client
+        #     scale (see module docstring); stop() closes the server socket, which makes the
+        #     blocking accept() raise OSError, so this loop exits promptly on shutdown.
 
     # -- Public API -------------------------------------------------------
 
     def start(self) -> None:
         """Bind the AF_UNIX socket and start the accept thread."""
+        # SocketBind — What: clear any stale socket file, bind a fresh AF_UNIX socket at
+        #     0600, listen, and launch the accept thread.
         self._stop_event.clear()
 
         # Remove stale socket.
@@ -266,6 +290,9 @@ class IPCServer:
         self._server_sock.bind(str(self._sock_path))
         os.chmod(str(self._sock_path), 0o600)
         self._server_sock.listen(8)
+        # SocketBind — Why: bind() fails if a stale socket file from a prior crash still
+        #     exists, so it is unlinked first; chmod 0600 restricts the socket to the owning
+        #     UID, which is the primary access control for the runtime (see _builtin_shutdown).
 
         self._accept_thread = threading.Thread(
             target=self._accept_loop,
@@ -283,6 +310,8 @@ class IPCServer:
         grace : float
             Seconds to wait for in-flight handler threads to finish.
         """
+        # ShutdownDrain — What: signal stop, close the server socket to unblock accept(),
+        #     join the accept + handler threads, then remove the socket file.
         self._stop_event.set()
 
         # Close the server socket to unblock accept().
@@ -311,10 +340,31 @@ class IPCServer:
             pass
 
         _log.info("ipc stopped")
+        # ShutdownDrain — Why: ordering matters — setting stop and closing the listen socket
+        #     first makes accept() raise so the accept thread exits, after which in-flight
+        #     handlers are joined (bounded by `grace`) before the socket file is removed, so a
+        #     restart's start() does not collide with a half-torn-down endpoint.
 
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.ipc
-# phase: AUD26-26.1
-# layer: runtime (long-lived process)
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      AUD26 -- Phase 26.1 (runtime IPC foundation)
+# Layer:      runtime (long-lived process)
+# Role:       AF_UNIX JSON-line socket server for the memory runtime — op dispatch,
+#             built-in ops (health/version/echo/shutdown), and the register_op plugin
+#             registry later phases bolt their handlers onto.
+# Stability:  v1.0 -- AF_UNIX JSON-line server; threading model (1 accept thread +
+#             1 handler thread per connection); plugin-op registry for later phases.
+# ErrorModel: per-connection fail-soft -- a malformed line yields a parse-error response,
+#             a handler exception yields an ok=False error response, and recv/send OSErrors
+#             close the connection without killing the server; access control is the
+#             socket's 0600 owner-only permission.
+# Depends:    json, logging, os, socket, struct, threading, time, pathlib, typing (stdlib).
+#             samia.runtime.daemon (TYPE_CHECKING + lazy import for health/version/shutdown).
+# Exposes:    IPCServer, register_op, unregister_op, OpHandler,
+#             DEFAULT_REQUEST_TIMEOUT.
+# Lines:      367
 # --------------------------------------------------------------------------

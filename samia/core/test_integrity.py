@@ -1,4 +1,4 @@
-"""Tests for samia.core.integrity — FEAT-2026-06-07 granular-recall-repaired-decay P1.
+"""samia.core.test_integrity — tests for samia.core.integrity content-fidelity decay (FEAT-2026-06-07 granular-recall-repaired-decay P1).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the SECOND (content-fidelity) decay axis: erode() removes a
@@ -504,3 +504,24 @@ class TestSemanticErosionOverride(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_integrity
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 granular-recall-repaired-decay P1
+# Layer:      test (pytest)
+# Role:       tests for samia.core.integrity — erode() removes a small, bounded,
+#             length-preserving number of chars + lowers integrity; high salience
+#             and hot/frozen/semantic tiers erode slower; masked read reflects
+#             erosion while the anchor stays pristine; recall_repair restores
+#             byte-exact + integrity ~1.0; the relevance axis stays unchanged.
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.integrity, samia.core.tier,
+#             samia.core.frontmatter
+# Exposes:    — (test module)
+# Lines:      529
+# --------------------------------------------------------------------------

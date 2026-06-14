@@ -1,4 +1,4 @@
-"""test_semantic_recall_p2 — FEAT-2026-06-10 P2 (MCP wire + read-conflict + bridge).
+"""samia.core.test_semantic_recall_p2 — tests for FEAT-2026-06-10 P2 (MCP wire + read-conflict + bridge).
 
 What: tmp-store tests for the three P2 additions on the semantic recall arm:
   - P2a (MCP wire): core.mcp_server.memory_chainogram_retrieve flag-off byte-identity
@@ -407,9 +407,16 @@ class TestReadConflictEnabledReader(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-# ---------------------------------------------------------------------------
-# Metadata
-#   project: SAM/IA semantic recall arm (FEAT-2026-06-10, P2)
-#   created: 2026-06-11  author: Claude (code-warrior)   version: 1.0.0
-#   contract: tmp stores only; never touches the live memory dir
-# ---------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_semantic_recall_p2
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-10 P2 — MCP wire + read-conflict supersession signal + entity-bridge atom retrieval
+# Layer:      test (pytest)
+# Role:       tests for samia.core.semantic_recall + mcp_server + entity_index — additive composed_* MCP overlay, record-only/fail-open/dedup-guarded/kill-switchable read-conflict signal, entity-bridge reserve reaching multihop atoms with fail-open to pure vector
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.semantic_recall, samia.core.context_extension, samia.core.entity_index, samia.core.mcp_server, samia.core.vector, samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      424
+# ------------------------------------------------------------------------------

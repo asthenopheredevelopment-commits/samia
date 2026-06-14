@@ -1,4 +1,4 @@
-"""Tests for samia.runtime.model_fetch -- self-fetching gguf weights.
+"""samia.runtime.test_model_fetch — tests for samia.runtime.model_fetch (self-fetching gguf weights).
 
 Layer 1 (Owns / Depends):
     Owns:    unit tests for the model registry + fetch_model() download path +
@@ -407,3 +407,21 @@ class TestGetBackendSelfFetch(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.test_model_fetch
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-10 self-fetch + SEC-2026-06-12 consent protocol
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.model_fetch, samia.runtime.inference —
+#             registry lookup, existing-path passthrough, autofetch-gate refusal,
+#             atomic/verified mocked download, consent matrix, self-fetch wire
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.model_fetch, samia.runtime.inference
+# Exposes:    — (test module)
+# Lines:      429
+# --------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""Tests for samia.core.mcp_server._coactivation_neighbors — Tier-0 D4 read-back.
+"""samia.core.test_recall_coactivation — tests for mcp_server._coactivation_neighbors (Tier-0 D4 read-back).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the conservative co-activation neighbor boost on recall.
@@ -79,3 +79,18 @@ class TestCoactivationNeighbors(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_recall_coactivation
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Tier-0 D4 — conservative co-activation neighbor boost on recall
+# Layer:      test (pytest)
+# Role:       tests for samia.core.mcp_server._coactivation_neighbors — neighbor surfaced but clamped below its parent, existing-node exclusion, max-neighbors cap, fail-open with no edges.db
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.mcp_server, samia.core.web_store
+# Exposes:    — (test module)
+# Lines:      98
+# ------------------------------------------------------------------------------

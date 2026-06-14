@@ -1,4 +1,4 @@
-"""Tests for samia.core.tier — FEAT-2026-06-07 Tier-1 P5 salience-aware decay (D6 ii).
+"""samia.core.test_tier — tests for samia.core.tier (FEAT-2026-06-07 Tier-1 P5 salience-aware decay, D6 ii).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the P5 salience-aware relevance decay: step_relevance's
@@ -154,3 +154,18 @@ class TestDecayPassSalience(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_tier
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 Tier-1 P5 salience-aware decay (D6 ii)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.tier — step_relevance salience-dampened decrement (high-salience decays slower, salience-0 byte-identical to pre-P5), decay_pass freeze/eviction exemption above SALIENCE_FREEZE_EXEMPT, no-salience node auto-freezes as before
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.tier, samia.core.web_store
+# Exposes:    — (test module)
+# Lines:      173
+# ------------------------------------------------------------------------------

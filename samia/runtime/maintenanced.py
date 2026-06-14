@@ -369,21 +369,31 @@ if __name__ == "__main__":
     sys.exit(main())
 
 
-# ─────────────────────────────────────────────
-# [maintenanced] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.runtime
-# Version:    1.0.0  Updated: 2026-06-12  Status: active
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.maintenanced
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      SAM/IA public release — minimal maintenance daemon (scheduler +
 #             watcher + REM driving ONLY; NOT a refactor of daemon.py).
+# Layer:      runtime (daemon / process plane)
 # Role:       the daemonless release's maintenance spine: single-instance flock
 #             under the memory dir, periodic REM tick (compute_pressure ->
 #             rem_cycle.tick), SIGTERM/SIGINT clean stop, --oneshot single pass.
+# Stability:  stable — operator-approved release scope (scheduler + watcher + REM
+#             driving only); not a daemon.py refactor.
+# ErrorModel: returns 1 when another instance holds the single-instance flock;
+#             subsystem stop is best-effort (non-fatal exceptions logged, never
+#             raised); signals install only on the main thread; subsystem starts
+#             surface their own errors.
 # Depends:    argparse, fcntl, os, signal, threading, time, pathlib (stdlib);
 #             samia.core.paths (resolve_memory_root); samia.runtime.scheduler,
 #             .watcher, .rem_cycle, .rem_subscribers, .sleep_pressure (all SHIP).
+# Exposes:    MaintenanceDaemon, main.
 # Contract:   NO IPC, NO op registry, NO model loading at startup. LLM arms load
 #             lazily only if a REM subscriber's work is due; ASTHENOS_MODEL_
 #             AUTOFETCH=0 means zero downloads. NEVER drives a real/live store
 #             (callers pass --memory-dir or rely on resolve_memory_root); tests
 #             use tempfile scratch stores only.
-# ─────────────────────────────────────────────
+# Lines:      396
+# --------------------------------------------------------------------------

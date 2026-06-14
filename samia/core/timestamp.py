@@ -35,8 +35,8 @@ _log = logging.getLogger("samia.core.timestamp")
 # Phase 3: Canonical UTC timestamp factory
 # ---------------------------------------------------------------------------
 
-# _UTC -- What: timezone constant for UTC.
-# _UTC -- Why: avoids repeated construction; used by now_utc() and
+# _UTC — What: timezone constant for UTC.
+# _UTC — Why: avoids repeated construction; used by now_utc() and
 #   normalize_ts(). datetime.timezone.utc is the modern replacement for
 #   the deprecated datetime.utcnow().
 _UTC = datetime.timezone.utc
@@ -68,13 +68,13 @@ def now_utc_iso(timespec: str = "seconds") -> str:
 # Phase 2: On-read normalization shim
 # ---------------------------------------------------------------------------
 
-# _OFFSET_RE -- What: regex to detect an explicit UTC offset in an ISO string.
-# _OFFSET_RE -- Why: used by normalize_ts() to distinguish naive, local-TZ,
+# _OFFSET_RE — What: regex to detect an explicit UTC offset in an ISO string.
+# _OFFSET_RE — Why: used by normalize_ts() to distinguish naive, local-TZ,
 #   and UTC timestamps. Matches +HH:MM, -HH:MM, or Z at end of string.
 _OFFSET_RE = re.compile(r"(?:[+-]\d{2}:\d{2}|Z)$")
 
-# _LOCAL_TZ -- What: the operator's local timezone object (system default).
-# _LOCAL_TZ -- Why: used by normalize_ts() to interpret naive timestamps as
+# _LOCAL_TZ — What: the operator's local timezone object (system default).
+# _LOCAL_TZ — Why: used by normalize_ts() to interpret naive timestamps as
 #   local time (best-effort assumption for historical gating records that
 #   used datetime.now() without timezone info).
 try:
@@ -211,12 +211,18 @@ def assert_utc_iso(ts_str: str, context: str = "") -> str:
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.core.timestamp
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD63 -- Phases 2-3 (on-read normalization + write enforcement)
 # Layer:      core (pure library, no daemon dependency)
+# Role:       canonical UTC timestamp primitives — now_utc/now_utc_iso for writers,
+#             normalize_ts on-read migration of legacy local-TZ/naive stamps, and the
+#             assert_utc_iso write-boundary guard.
 # Stability:  v1.0 -- foundational utility, no expected API changes
 # ErrorModel: normalize_ts is fail-open (returns original on parse error);
 #             assert_utc_iso is fail-fast (raises ValueError).
 # Depends:    datetime, re, logging (stdlib).
 # Exposes:    now_utc, now_utc_iso, normalize_ts, assert_utc_iso.
-# Lines:      ~170
+# Lines:      225
 # --------------------------------------------------------------------------

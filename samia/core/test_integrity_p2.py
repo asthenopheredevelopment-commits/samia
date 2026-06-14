@@ -1,4 +1,4 @@
-"""Tests for samia.core.integrity P2 — FEAT-2026-06-07 granular-recall-repaired-decay.
+"""samia.core.test_integrity_p2 — tests for samia.core.integrity Phase P2 (FEAT-2026-06-07 granular-recall-repaired-decay).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for Phase P2 of the SECOND (content-fidelity) decay axis:
@@ -457,3 +457,24 @@ class TestNoGenerativeRepair(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_integrity_p2
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 granular-recall-repaired-decay P2
+# Layer:      test (pytest)
+# Role:       tests for samia.core.integrity P2 — anchor capture on the genuine
+#             write path, PARTIAL consolidation/reconciliation repair (anchor-
+#             first, cursor-tracked, < full recall), live-salience erosion
+#             coupling, all gated/inert by default, relevance axis untouched.
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.integrity, samia.core.frontmatter,
+#             samia.core.merge_consumer, samia.core.mcp_server, samia.core.bio,
+#             samia.runtime.rem_subscribers, samia.runtime.rem_cycle
+# Exposes:    — (test module)
+# Lines:      482
+# --------------------------------------------------------------------------

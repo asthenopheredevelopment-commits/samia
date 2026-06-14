@@ -413,7 +413,26 @@ def register_ops() -> None:
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.idle_pulse
-# phase: FEAT-2026-06-02-idle-pulse-daemon-resident-tick-loop-v01 (Phases 1-2)
-# layer: runtime (daemon-resident background subsystem)
-# bug:   bug_idle_pulse_hook_python_swarm (fix #2 — resident model, no fork/call)
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-02-idle-pulse-daemon-resident-tick-loop-v01 (Phases 1-2)
+# Layer:      runtime (daemon-resident background subsystem)
+# Role:       daemon-resident idle-pulse tick loop — a subscriber registry + one
+#             resident embedding model + a self-scheduled servicing thread + a
+#             coalescing nudge, replacing the per-tool-call python/model-reload swarm.
+# Stability:  stable — HYBRID self-schedule + coalescing nudge; per-subscriber
+#             cadence gating; idempotent start/stop/register.
+# ErrorModel: fail-open per subscriber — one tick raising never stops the rest or the
+#             loop (counted in error_count/last_error); resident-model preload failure
+#             is non-fatal (ticks fall back to lazy-loading the model).
+# Depends:    samia.runtime.ipc (register_op), samia.core.vector (resident model),
+#             samia.core.paths (resolve_memory_root), the lazy tick modules
+#             (context_extension/gates/auditor/tier/rem_cycle/integrity), torch
+#             (optional, CPU thread cap); logging/os/sys/threading/time/dataclasses/
+#             pathlib/typing (stdlib).
+# Exposes:    register_subscriber, register_ops, start_idle_pulse_loop,
+#             stop_idle_pulse_loop.
+# Note:       bug_idle_pulse_hook_python_swarm (fix #2 — resident model, no fork/call).
+# Lines:      435
 # --------------------------------------------------------------------------

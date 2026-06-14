@@ -1,4 +1,4 @@
-"""Tests for the memory_guard live-pollution incident fix.
+"""samia.runtime.test_memory_guard_live_isolation — tests for the memory_guard live-pollution incident fix.
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the three-part root-cause fix to the
@@ -268,3 +268,21 @@ class TestFinderDictManifestNoKeyError(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.test_memory_guard_live_isolation
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      2026-06-07 live-memory pollution incident fix
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.memory_guard, samia.runtime.contradiction —
+#             non-live target test isolation, bug-node self-amplification guard,
+#             passive-sweep dict-manifest robustness (no KeyError(row) storm)
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.memory_guard, samia.runtime.contradiction, samia.runtime.bug_records
+# Exposes:    — (test module)
+# Lines:      290
+# --------------------------------------------------------------------------

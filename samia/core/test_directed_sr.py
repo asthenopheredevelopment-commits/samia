@@ -1,4 +1,4 @@
-"""Tests for the directed-SR fold — FEAT-2026-06-11 P6 (proposal §5.4-5.5 + §16).
+"""samia.core.test_directed_sr — tests for the directed-SR fold (FEAT-2026-06-11 P6, proposal §5.4-5.5 + §16).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the directed successor representation (phase 2):
@@ -401,19 +401,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_directed_sr] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
-# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P6 tests — directed-SR
-#             fold (§5.4-5.5 + §16). PRODUCER: _record_directed_transitions counts A->B in
-#             episode_seq order (not lexical), increments (not rebuilds), counts interleaved
-#             pairs, lets both directions coexist, skips equal-seq. LEGACY: legacy pair
-#             skipped; forward kernel == symmetric without transitions; per-row symmetric
-#             fallback. CONSUMER: forward row-stochastic; reverse == transpose; forward≠
-#             reverse on a directed graph; malformed dropped; directed need reaches the
-#             forward successor. FLAG-OFF BYTE-IDENTITY: producer skipped flag-off; consumer
-#             byte-identical with directed counts present but λN=0 / flag-off.
-# Role:       prove P6's directed counting, symmetric fallback, and flag-off byte-identity
-# Depends:    context_extension; successor; bio; unittest, tempfile, json, os
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_directed_sr
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P6 — directed-SR fold (§5.4-5.5 + §16)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.context_extension + successor (+ bio) — directed counting in episode_seq order, increment-not-rebuild, symmetric per-row legacy fallback, forward/reverse kernels, flag-off byte-identity
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.context_extension, samia.core.successor, samia.core.bio
+# Exposes:    — (test module)
+# Lines:      418
+# ------------------------------------------------------------------------------

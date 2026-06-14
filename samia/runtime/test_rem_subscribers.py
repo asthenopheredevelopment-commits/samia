@@ -1,4 +1,4 @@
-"""Tests for REM P2 — the offline-op subscriber registry, gate, and driver.
+"""samia.runtime.test_rem_subscribers — tests for the REM P2 offline-op subscriber registry, gate, and driver.
 
 Layer 1 (Owns / Depends):
     Owns:    unit tests for rem_cycle's P2 surface (register_offline_op +
@@ -663,13 +663,16 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# ─────────────────────────────────────────────
-# [test_rem_subscribers] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.runtime
-# Version:    1.0.0  Updated: 2026-06-07  Status: active
+# [Asthenosphere] samia.runtime.test_rem_subscribers
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-07-memory-rem-sleep-consolidation-cycle-v01 (P2 tests)
-# Role:       unit tests — subscriber registry + priority + fail-open + the
-#             run-only-in-REM gate + interrupt/checkpoint + work_remaining feeds
-#             evaluate + migrated ops refuse outside REM but run inside
-# Depends:    tempfile, unittest; samia.runtime.rem_cycle, rem_subscribers
-# ─────────────────────────────────────────────
+# Layer:      test (pytest)
+# Role:       tests for rem_cycle, rem_subscribers — subscriber registry + priority + fail-open + run-only-in-REM gate + interrupt/checkpoint + work_remaining feeds evaluate + migrated ops refuse outside REM but run inside
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.rem_cycle, samia.runtime.rem_subscribers
+# Exposes:    — (test module)
+# Lines:      680
+# ------------------------------------------------------------------------------

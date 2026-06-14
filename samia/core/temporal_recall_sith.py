@@ -1,4 +1,4 @@
-"""temporal_recall_sith.py -- SITH multi-timescale temporal-context term (P2).
+"""samia.core.temporal_recall_sith -- SITH multi-timescale temporal-context term (P2).
 
 Layer 1 (Owns / Depends):
     Owns:    The SITH (Scale-Invariant Temporal History) temporal-context machinery
@@ -460,10 +460,10 @@ def jump_back_blend(memory_dir: Path, retrieved_nodes: list[str], *,
         return False
 
 
-# ─────────────────────────────────────────────
-# [temporal_recall_sith] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
+# [Asthenosphere] samia.core.temporal_recall_sith
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P2 — SITH temporal-
 #             context term (§4 + §16.2 Q3). K=6 log-spaced leaky integrators; update
 #             coalesced to one tick per ASTHENOS_HEBB_MIN_INTERVAL_S by REUSING
@@ -471,7 +471,19 @@ def jump_back_blend(memory_dir: Path, retrieved_nodes: list[str], *,
 #             sidecar (write-once, keyed by engram id, NOT frontmatter); jump-back
 #             partial blend β≈0.3. Inert at retrieval until ASTHENOS_TEMPORAL_WEIGHT +
 #             γ≥ε flip it on; flag-off is a byte-identical no-op.
+# Layer:      core (pure library, no daemon dependency)
 # Role:       compute the additive-cue SITH temporal-context term TĈ_c
+# Stability:  stable -- v1.0.0; additive-optional, inert until the temporal flag + γ flip on.
+# ErrorModel: fail-soft throughout — every write-side hook (integrator_observe,
+#             capture_snapshot, jump_back_blend) swallows errors and returns False,
+#             leaving the bank/sidecar untouched; tc_term_hit returns 0.0 on any error
+#             or a missing snapshot, so a legacy hit contributes nothing (fails open).
+#             Bank/sidecar state is mutated only under locked_update_json (flock).
 # Depends:    numpy; vector (EMBED_DIM/_embed_batch); bio (cadence primitive — reused);
-#             hippocampus (_engram_id/_hippocampus_dir); atomic_state (locked_update_json)
-# ─────────────────────────────────────────────
+#             hippocampus (_engram_id/_hippocampus_dir); atomic_state (locked_update_json).
+#             stdlib (json, math, time, pathlib).
+# Exposes:    sith_tau_seconds, integrator_observe, capture_snapshot, tc_term_hit,
+#             jump_back_blend. Constants: SITH_K_DEFAULT, SITH_TAU_SECONDS_SEED,
+#             SITH_JUMPBACK_BETA.
+# Lines:      486
+# --------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-"""test_anchor_capture_write_path.py — FEAT-2026-06-08 anchor-capture on the genuine-write path.
+"""samia.core.test_anchor_capture_write_path — tests for anchor-capture on the genuine-write path (FEAT-2026-06-08).
 
 Covers P1 (write_node capture + sha-skip + integrity reset) and P2 (backfill_anchors_pass /
 the backstop sweep). Validates the answered preplanner decisions: Q1a (universal in
@@ -137,3 +137,18 @@ def test_idle_pulse_registers_anchor_backfill():
     ip._seed_default_subscribers()
     assert "anchor_backfill" in ip._subscribers
     assert ip._subscribers["anchor_backfill"].cadence_s == ip.ANCHOR_BACKFILL_CADENCE_S
+
+
+# [Asthenosphere] samia.core.test_anchor_capture_write_path
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-08-anchor-capture-genuine-write-path (P1 + P2 tests)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.integrity + frontmatter.write_node — anchor capture on genuine writes, sha-skip, integrity reset, and the P2 backfill/backstop sweep
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    pytest + samia.core.integrity, samia.core.frontmatter, samia.runtime.idle_pulse
+# Exposes:    — (test module)
+# Lines:      156
+# ------------------------------------------------------------------------------

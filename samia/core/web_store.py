@@ -1,29 +1,34 @@
 """samia.core.web_store — the unified associative web (Hebbian → edges.db).
 
-What: The single first-class associative graph over ALL memory nodes. bio.py's
-      Hebbian consolidation writes weighted, CROSS-CHAIN co-activation edges here;
-      the Topology Atlas (graphify.rs) reads them and renders the physics. This
-      collapses the two previously-disconnected edge systems (bio.py edge_weights
-      + the Atlas's edges.db) into one store that the real co-activation dynamics
-      govern.
-
-Why: Measured 2026-05-29 (hebbian_health.py), 100% of co-activations were
-     structurally barred from becoming navigable edges — promotion required both
-     nodes to already share a chain, so the webwork SAM/IA was designed around
-     never formed. Per the approved FEAT-2026-05-29-hebbian-cross-chain-web-v01
-     (Piece A), this module removes that gate: any co-activated pair forms a web
-     edge regardless of chain membership, tiered by weight, decayed and pruned
-     over time. Chains remain a curated OVERLAY on top of this web.
+Layer 1 (Owns / Depends):
+    Owns:    connect, upsert_edge, bump_mass, decay_prune, delete_node_edges,
+                 forget_node_edges, coactivation_neighbors, sync_from_consolidation
+                 — the writer/reader surface over the 'coactivation' ref_kind.
+                 sync_from_consolidation is the high-level entry bio.py calls;
+                 coactivation_neighbors is the live Tier-0 neighbor query.
+             COACTIVATION, the tiered-formation + pruning constants (WEAK_FORM,
+                 STRUCTURAL, PRUNE_BELOW, EDGE_DECAY_PER_DAY, DEGREE_CAP, MASS_*).
+    Depends: stdlib only (sqlite3, os, datetime, pathlib). It coexists in edges.db
+             with abyss_graph.py (which owns the other ref_kinds) on a PK-disjoint
+             table; all DDL is additive + idempotent so both writers self-bootstrap.
+Layer 2 (What / Why):
+    What: the single first-class associative graph over ALL memory nodes. bio.py's
+          Hebbian consolidation writes weighted, CROSS-CHAIN co-activation edges
+          here; the Topology Atlas (graphify.rs) reads them and renders the physics.
+          Edges form at/above WEAK_FORM, decay by age, prune below PRUNE_BELOW, and
+          are degree-capped per node; per-node 'mass' tracks decaying usage.
+    Why:  measured 2026-05-29 (hebbian_health.py), 100% of co-activations were
+          structurally barred from becoming navigable edges — promotion required
+          both nodes to already share a chain, so the webwork SAM/IA was designed
+          around never formed. Per the approved FEAT-2026-05-29-hebbian-cross-chain-
+          web-v01 (Piece A), this module removes that gate: any co-activated pair
+          forms a web edge regardless of chain membership. Chains remain a curated
+          OVERLAY on top of this web.
 
 Scope (Piece A only): raw substrate — weighted cross-chain edges + per-node
-     decaying mass + timestamps. The 3D force law (anti-gravity anchors, inertia,
-     collision) is Piece B and DERIVES from these fields; nothing here computes
-     forces or positions.
-
-Storage: extends the existing edges.db (abyss_graph.py owns markdown_link/
-     session_uuid/warrior_name/aud_id ref_kinds; this module owns the
-     'coactivation' ref_kind, plus a weight column and a nodes table). All DDL is
-     additive + idempotent so both writers coexist on one PK-disjoint table.
+    decaying mass + timestamps. The 3D force law (anti-gravity anchors, inertia,
+    collision) is Piece B and DERIVES from these fields; nothing here computes
+    forces or positions.
 """
 from __future__ import annotations
 
@@ -345,19 +350,42 @@ def sync_from_consolidation(weights: dict, node_appearances: Optional[dict] = No
         conn.close()
 
 
-# ── module metadata ────────────────────────────────────────────────────────
-# file:        samia/core/web_store.py
-# role:        Piece A unified associative web writer (Hebbian → edges.db)
-# proposal:    FEAT-2026-05-29-hebbian-cross-chain-web-v01 (approved 2026-05-29)
-# owns:        ref_kind='coactivation' rows + weight column + nodes(mass) table
-# consumers:   bio.hebbian_consolidation (writer), graphify.rs (reader), Piece B (forces),
-#              bio.active_set (P3b reader via coactivation_neighbors)
-# gauge:       samia/core/hebbian_health.py
-# G3-2026-06-11 (ghost-edge re-upsert fix): sync_from_consolidation now takes an
-#              optional memory_dir. When given, it builds the live-node set ONCE per
-#              pass (cheap glob, cached) and SKIPS pairs whose endpoint no longer
-#              exists under nodes/ (a forgotten node's pair was being re-upserted into
-#              edges.db every cycle) — reporting them in stats["dead_keys"] so the
-#              caller (bio.hebbian_consolidate) evicts them from edge_weights.json in
-#              the SAME pass. Mirrors the P0 forget_node cascade: node death must not
-#              leave OR re-grow edges. Without memory_dir, legacy behavior is preserved.
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.web_store
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-05-29-hebbian-cross-chain-web-v01 (Piece A, approved
+#             2026-05-29) — unified associative web writer (Hebbian → edges.db).
+#             + FEAT-2026-06-07 P0 (delete_node_edges / forget_node_edges: the
+#               edges.db endpoint of the forget_node cascade — no ghost edges)
+#               + P3b (coactivation_neighbors: live Tier-0 neighbor query).
+#             + G3-2026-06-11 ghost-edge re-upsert fix: sync_from_consolidation
+#               takes an optional memory_dir; when given it builds the live-node set
+#               ONCE per pass (cheap glob, cached) and SKIPS pairs whose endpoint no
+#               longer exists under nodes/ (a forgotten node's pair was being re-
+#               upserted into edges.db every cycle), reporting them in
+#               stats["dead_keys"] so bio.hebbian_consolidate evicts them from
+#               edge_weights.json in the SAME pass. Without memory_dir, legacy
+#               behavior is preserved (the guard is disabled).
+# Layer:      core (pure library; self-bootstrapping schema, no daemon dependency)
+# Role:       the unified associative web writer/reader — materializes, decays, and
+#             degree-caps cross-chain Hebbian coactivation edges in edges.db, syncs them
+#             from bio consolidation (ghost-edge-guarded), and serves Tier-0 neighbors.
+# Stability:  stable -- owns ref_kind='coactivation' rows + weight column +
+#             nodes(mass) table; coexists with abyss_graph on a PK-disjoint table.
+# ErrorModel: connect is self-bootstrapping (additive idempotent DDL) so callers
+#             never crash on a cold db; forget_node_edges / coactivation_neighbors
+#             are no-op-safe when edges.db does not exist yet; _days_since fails
+#             SOFT to 0 on an unparseable timestamp; the live-node guard disables
+#             itself (live=None) on an unreadable nodes/ dir.
+# Depends:    sqlite3, os, datetime, pathlib (stdlib).
+# Exposes:    COACTIVATION, connect, upsert_edge, bump_mass, decay_prune,
+#             delete_node_edges, forget_node_edges, coactivation_neighbors,
+#             sync_from_consolidation; the WEAK_FORM/STRUCTURAL/PRUNE_BELOW/
+#             EDGE_DECAY_PER_DAY/DEGREE_CAP/MASS_* tuning constants.
+# Lines:      388
+# Consumers:  bio.hebbian_consolidation (writer), graphify.rs (reader), Piece B
+#             (forces), bio.active_set (P3b reader via coactivation_neighbors).
+# Gauge:      samia/core/hebbian_health.py
+# --------------------------------------------------------------------------

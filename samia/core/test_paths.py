@@ -1,4 +1,4 @@
-"""test_paths -- coverage for samia.core.paths.resolve_memory_root.
+"""samia.core.test_paths — tests for samia.core.paths.resolve_memory_root.
 
 Layer 1 (Owns / Depends):
     Owns:    the resolve_memory_root resolution-order tests + the two-consumer
@@ -139,12 +139,16 @@ def test_both_consumers_share_one_resolver(tmp_path):
     assert bug_records.resolve_memory_root is rem_cycle.resolve_memory_root
 
 
-# ─────────────────────────────────────────────
-# [test_paths] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
-# Role:       resolution-order + consumer-rewiring coverage for core.paths
-# Depends:    pytest, unittest.mock, samia.core.paths, samia.runtime.{bug_records,rem_cycle}
-# Note:       PRODUCE-ONLY / hermetic — all writes land in tmp_path; HOME and
-#             XDG_DATA_HOME are monkeypatched, the real ~/.local is never touched.
-# ─────────────────────────────────────────────
+# [Asthenosphere] samia.core.test_paths
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      BUG-paths — resolve_memory_root resolution order + consumer rewiring
+# Layer:      test (pytest)
+# Role:       tests for samia.core.paths.resolve_memory_root — env-wins / verified-legacy / XDG-fallback resolution order + both consumers route through the resolver
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    pytest + samia.core.paths, samia.runtime.bug_records, samia.runtime.rem_cycle
+# Exposes:    — (test module)
+# Lines:      156
+# ------------------------------------------------------------------------------

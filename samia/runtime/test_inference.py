@@ -1,4 +1,4 @@
-"""Tests for samia.runtime.inference -- backend protocol, mock, factory, IPC ops, telemetry.
+"""samia.runtime.test_inference — tests for samia.runtime.inference (backend protocol, mock, factory, IPC ops, telemetry).
 
 Layer 1 (Owns / Depends):
     Owns:    inference unit tests, telemetry unit tests
@@ -614,11 +614,18 @@ class TestInferenceTelemetryStatusOp(_BackendRegistryIsolation):
 if __name__ == "__main__":
     unittest.main()
 
-# --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.test_inference
-# Updated: 2026-05-03  AUD28-28.2
-# Lines:   ~490
-# Version: 26.3+28.2
-# phase: AUD28-28.2 (telemetry tests)
-# layer: test
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      AUD26.3 (in-runtime inference) + AUD28-28.2 (daemon telemetry)
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.inference — MockBackend determinism,
+#             get_backend() fallbacks, IPC op registration/shapes, LlamaCpp guard,
+#             telemetry emission/shape/resilience, caller_hint propagation
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.inference, samia.runtime.ipc
+# Exposes:    — (test module)
+# Lines:      633
 # --------------------------------------------------------------------------

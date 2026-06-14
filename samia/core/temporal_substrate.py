@@ -1,4 +1,4 @@
-"""temporal_substrate.py -- write-time substrate for the temporal-recall layer (P0).
+"""samia.core.temporal_substrate -- write-time substrate for the temporal-recall layer (P0).
 
 Layer 1 (Owns / Depends):
     Owns:    The two ADDITIVE-OPTIONAL write-time fields the temporal-recall formula
@@ -113,15 +113,24 @@ def write_time_fields(memory_dir: Path) -> dict:
     }
 
 
-# ─────────────────────────────────────────────
-# [temporal_substrate] — File Metadata
-# Author:     code_warrior (CLI steward)  |  Project: Asthenosphere samia.core
-# Version:    1.0.0  Updated: 2026-06-11  Status: active
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.temporal_substrate
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      FEAT-2026-06-11-memory-temporal-recall-formula-v01 P0 — write-time
 #             substrate (§3 + §16.1). Two additive-optional fields (written_at float
 #             anchor + one corpus-global monotone episode_seq) stamped at the two
 #             primary write sites + the engram materialize record. Inert at retrieval
 #             until a later phase reads them; flag-off is a byte-identical no-op.
+# Layer:      core (pure library, no daemon dependency)
 # Role:       mint + persist the write-time temporal substrate (no read/ranking path)
-# Depends:    time, pathlib (stdlib); samia.core.atomic_state (locked_update_json)
-# ─────────────────────────────────────────────
+# Stability:  stable — additive-optional write-time fields; flag-off is a no-op and
+#             every future consumer fails open on absence.
+# ErrorModel: never crashes a write — next_episode_seq heals a non-int/corrupt
+#             counter forward to 0; biomimetic/ is created on demand; the flock +
+#             atomic-replace primitive surfaces lock/IO errors from locked_update_json.
+# Depends:    time, pathlib (stdlib); samia.core.atomic_state (locked_update_json).
+# Exposes:    now_written_at, next_episode_seq, write_time_fields.
+# Lines:      133
+# --------------------------------------------------------------------------

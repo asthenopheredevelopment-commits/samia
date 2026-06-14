@@ -1,4 +1,4 @@
-"""Tests for the forget_node cross-tier invalidation cascade — FEAT-2026-06-07 P0 Phase 1.
+"""samia.core.test_forget_node — tests for the forget_node cross-tier invalidation cascade (FEAT-2026-06-07 P0 Phase 1).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for ia.forget_node + its per-store endpoints (web_store.delete_node_edges,
@@ -224,3 +224,18 @@ class TestG3GhostEdgeReUpsert(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_forget_node
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 P0 Phase 1 forget_node cross-tier cascade (+ G3-2026-06-11 ghost-edge re-upsert guard)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.ia.forget_node + per-store endpoints — edges.db/edge_weights deletion, chain strip, vector tombstone, forgotten-log, sweep dry-run, and the every-cycle dead-endpoint sync guard
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.ia, samia.core.web_store, samia.core.bio, samia.core.chain, samia.core.vector
+# Exposes:    — (test module)
+# Lines:      243
+# ------------------------------------------------------------------------------

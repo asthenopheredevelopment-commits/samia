@@ -403,16 +403,29 @@ def _size_hint(entry: dict) -> str:
     return "size unknown"
 
 
-# ---------------------------------------------------------------------------
-# Layer 4 (metadata footer)
-# ---------------------------------------------------------------------------
-#   module:   samia.runtime.model_fetch
-#   role:     on-demand self-fetching of gguf LLM weights (release UX parity
-#             with the auto-downloading sentence-transformers embedder)
-#   gate:     samia.core.netconsent.consent on ASTHENOS_MODEL_AUTOFETCH
-#             (off=refuse, on=standing consent, unset=ask-if-tty/refuse-non-tty;
-#             v1 release default = NO silent download)
-#   dest:     ~/.local/share/asthenos/models (MODELS_DIR)
-#   safety:   atomic .part->rename, size/sha verification before promotion,
-#             license notice before download, never leaves a partial file
-#   wired:    samia.runtime.inference.get_backend_for_model (fail-soft)
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.model_fetch
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      original SAM/IA runtime module — 2026-06-10 FEAT (KNOWN registry +
+#             gated atomic fetch); 2026-06-12 SEC (consent protocol via
+#             samia.core.netconsent replacing the bare autofetch gate).
+# Layer:      runtime (library helper, no daemon loop)
+# Role:       on-demand self-fetching of gguf LLM weights into MODELS_DIR (release
+#             UX parity with the auto-downloading sentence-transformers embedder).
+# Stability:  stable — KNOWN registry + consent-gated atomic fetch; no silent
+#             download in the v1 release default (unset env asks-if-tty / refuses).
+# ErrorModel: every failure raises ModelFetchError (gated-off refusal, unknown
+#             model, network/IO, size/sha verify fail) and never leaves a partial
+#             file — the .part is verified before the atomic rename and cleaned up
+#             on any error; callers fail-soft to MockBackend on that one type.
+# Depends:    hashlib, os, shutil, sys, urllib.request, urllib.parse, pathlib,
+#             typing (stdlib). samia.core.netconsent (the consent gate).
+# Exposes:    fetch_model, ModelFetchError, KNOWN, MODELS_DIR, AUTOFETCH_ENV.
+# Gate:       samia.core.netconsent.consent on ASTHENOS_MODEL_AUTOFETCH
+#             (off=refuse kill switch, on=standing consent, unset=ask-if-tty /
+#             refuse-non-tty; v1 release default = NO silent download).
+# Wired:      samia.runtime.inference.get_backend_for_model (fail-soft).
+# Lines:      428
+# --------------------------------------------------------------------------

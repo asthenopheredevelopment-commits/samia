@@ -1,4 +1,4 @@
-"""test_netconsent -- coverage for samia.core.netconsent.consent + helpers.
+"""samia.core.test_netconsent — tests for samia.core.netconsent.consent + helpers.
 
 Layer 1 (Owns / Depends):
     Owns:    the consent-protocol decision-matrix tests (kill switch / standing
@@ -288,3 +288,23 @@ class TestVectorConsentIntegration(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_netconsent
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      SEC consent protocol — v1 "no silent downloads, ever"
+# Layer:      test (pytest)
+# Role:       tests for samia.core.netconsent — the one-knob (ASTHENOS_MODEL_
+#             AUTOFETCH) decision matrix (kill switch / standing consent /
+#             ask-if-tty / refuse-non-tty naming both remedies), the env
+#             on/off helpers, the always-printed notice, and the core/vector
+#             integration (cache HIT never consents; MISS gates, declined raises).
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.netconsent, samia.core.vector
+# Exposes:    — (test module)
+# Lines:      312
+# --------------------------------------------------------------------------

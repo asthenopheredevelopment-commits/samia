@@ -1,4 +1,4 @@
-"""Tests for the Tier-2 merge consumer P1 — pick-winner dup-merge (FEAT-2026-06-07).
+"""samia.core.test_merge_consumer — tests for the Tier-2 merge consumer P1 pick-winner dup-merge (FEAT-2026-06-07).
 
 Layer 1 (Owns / Depends):
     Owns:    unit tests for merge_consumer's P1 surface — load_candidates,
@@ -354,3 +354,27 @@ class TestSubscriberRegistration(_RegistryIsolation):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.test_merge_consumer
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 Tier-2 merge consumer P1
+# Layer:      test (pytest)
+# Role:       tests for samia.core.merge_consumer P1 — load_candidates,
+#             classify_pair (jaccard fallback), pick_winner (richer survivor),
+#             merge_dup (RESTORABLE supersede + provenance edge), drain (backlog
+#             shrinks + work_remaining flips), the enable-flag gate, and the
+#             rem_subscribers tier2_merge registration at priority 22 + its
+#             refuse-outside-REM gate.
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.merge_consumer, samia.core.ia,
+#             samia.core.frontmatter, samia.core.consolidation,
+#             samia.core.web_store, samia.runtime.rem_cycle,
+#             samia.runtime.rem_subscribers
+# Exposes:    — (test module)
+# Lines:      382
+# --------------------------------------------------------------------------

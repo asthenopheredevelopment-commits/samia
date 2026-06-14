@@ -1,43 +1,37 @@
 """samia.core.vector — semantic vector index for SAM/IA memory nodes.
 
-Carved from memory_vector_index.py. The library plane carries all logic
-so the daemon (per design doc §3.4) can call build()/query() directly on
-a schedule and other library callers can semantic-search without
-spawning a subprocess.
+Layer 1 (Owns / Depends):
+    Owns:    build(memory_dir, rebuild=False) -> manifest dict — embed nodes/ into
+                 embeddings.npy + manifest.json (sha-keyed incremental cache).
+             query(memory_dir, text, top_k=8) -> list[{score, node, title}] — cosine
+                 recall, tombstone-aware, cross-embedder guarded.
+             info(memory_dir) -> None — print index provenance.
+             active_model_id, active_model_dim — the live embedder-selection contract.
+             tombstone_node, untombstone_node — forget/restore a node's recall row.
+             EmbedModelMismatch — the cross-embedder guard's dedicated exception.
+    Depends: numpy; transformers + torch (mean-pool embedder, loaded lazily);
+             samia.core.netconsent (cache-miss download gate, lazy import).
+Layer 2 (What / Why):
+    What: each node embeds to an L2-normalized [hidden_size] row; the matrix lives at
+          <memory_dir>/vector_index/embeddings.npy and the manifest records
+          {model_id, embed_model, dim, built_at, node_count, entries}. build() reuses a
+          cached row when a node's content sha is unchanged; query() embeds the text,
+          dots it against the matrix, and returns the top_k non-tombstoned rows.
+    Why:  the library plane carries all logic so the daemon (design doc §3.4) calls
+          build()/query() directly on a schedule. The active embedder is ASTHENOS_EMBED_
+          MODEL (unset => the historical MiniLM-L6-v2 default, so every existing index is
+          byte-stable); the dim is read from the model's hidden_size, NOT hard-coded, so
+          384/768/1024-d families share one mean-pool path. query() REFUSES a cross-
+          embedder query (a cosine across two embedding spaces is meaningless and silently
+          wrong — we fail LOUD via EmbedModelMismatch). A cache-miss model fetch is gated
+          through netconsent (ASTHENOS_MODEL_AUTOFETCH): off refuses, on is standing
+          consent, unset asks at a tty — no silent download ever.
 
-Index layout (under <memory_dir>/vector_index/):
-    embeddings.npy       — float32 [N, 384] L2-normalized matrix
-    manifest.json        — {model_id, dim, built_at, node_count, entries}
-
-Public API (parameterized on memory_dir):
-    build(memory_dir, rebuild=False)            → manifest dict
-    query(memory_dir, text, top_k=8)            → list[{score, node, title}]
-    info(memory_dir)                            → None  (prints)
-
-Embedding backend: transformers + torch, mean-pooled, L2-normalized,
-sentence-transformers/all-MiniLM-L6-v2 (384-dim, CPU-friendly) BY DEFAULT.
-
-Model selection (SLOT-SCALING 2026-06-12 / v1.1 model-menu seam):
-    The active embedder is chosen by ASTHENOS_EMBED_MODEL (a HuggingFace model id).
-    Unset => the historical MiniLM default, so every existing caller is byte-stable.
-    The embedding dim is NOT hard-coded to 384: it is read from the loaded model's
-    hidden_size, so 384/768/1024-d families (bge-small, mpnet-base, bge-large) all
-    work through the same mean-pool path. build() records BOTH the active model id and
-    its dim in the manifest; query() refuses to run a query whose active model differs
-    from the one the index was built with (a cross-embedder cosine is meaningless and
-    silently wrong — we fail LOUD instead). This guard is also the seam a future
-    in-product model menu flips: change the env, rebuild, and the manifest carries the
-    provenance.
-
-Download consent (SEC 2026-06-12): the first model use loads LOCAL-ONLY from
-the HuggingFace cache (no network, no prompt -- the common, fast path). On a
-cache miss the fetch is gated through samia.core.netconsent.consent (keyed on
-ASTHENOS_MODEL_AUTOFETCH): explicit-off refuses, explicit-on is standing
-consent, unset asks at a tty / refuses with no tty. A declined fetch raises a
-RuntimeError naming the env remedy. No silent download ever.
-
-Acceptance: byte-identical to pre-refactor memory_vector_index CLI
-output on the same memory tree.
+Layer 3 (Changelog):
+    Carved from memory_vector_index.py — byte-identical CLI output on the same tree.
+    SLOT-SCALING 2026-06-12 (v1.1): ASTHENOS_EMBED_MODEL embedder-selection seam +
+        manifest model provenance + cross-embedder query guard.
+    SEC 2026-06-12: cache-miss model download gated through netconsent.consent.
 """
 
 from __future__ import annotations
@@ -269,6 +263,8 @@ def active_model_dim() -> int:
     return int(_model.config.hidden_size)
 
 
+# _embed_batch — What: tokenize, run the model, mean-pool over real tokens, L2-normalize,
+#     and return a float32 [len(texts), hidden_size] matrix.
 def _embed_batch(texts: list[str]) -> np.ndarray:
     import torch
     _ensure_model()
@@ -288,6 +284,9 @@ def _embed_batch(texts: list[str]) -> np.ndarray:
     pooled = summed / counts
     pooled = torch.nn.functional.normalize(pooled, p=2, dim=1)
     return pooled.cpu().numpy().astype(np.float32)
+# _embed_batch — Why: the attention mask weights out padding before the mean (so a short
+#     text is not diluted by pad tokens), and L2-normalization makes the later dot product
+#     a cosine; counts is clamped to 1e-9 to avoid a divide-by-zero on an all-pad row.
 
 
 # ---------------------------------------------------------------------------
@@ -295,6 +294,8 @@ def _embed_batch(texts: list[str]) -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 
+# build — What: (re)embed nodes/ into embeddings.npy + manifest.json, reusing a cached
+#     row whenever a node's content sha is unchanged (rebuild=True drops the whole cache).
 def build(memory_dir: Path, rebuild: bool = False) -> dict:
     nodes_dir = _nodes_dir(memory_dir)
     index_dir = _index_dir(memory_dir)
@@ -395,6 +396,10 @@ def build(memory_dir: Path, rebuild: bool = False) -> dict:
     print(f"[vector_index] wrote {embed_path} shape={embeddings.shape}")
     print(f"[vector_index] wrote {_manifest_path(memory_dir)}")
     return manifest_out
+# build — Why: re-embedding is the expensive step, so the sha-keyed row cache means only
+#     changed/new nodes are embedded on an incremental build; the manifest's dim is taken
+#     from the matrix actually written (not a constant) so it can never disagree with
+#     embeddings.npy, and recording model_id is what arms query()'s cross-embedder guard.
 
 
 class EmbedModelMismatch(RuntimeError):
@@ -476,18 +481,28 @@ def info(memory_dir: Path) -> None:
         print(f"embeddings: shape={e.shape} dtype={e.dtype} bytes={e.nbytes}")
 
 
-# ─────────────────────────────────────────────
-# [vector] — File Metadata
-# Author:     code_warrior  |  Project: Asthenosphere samia.core
-# Version:    1.1.0  Updated: 2026-06-12  Status: active
-# Phase:      SLOT-SCALING 2026-06-12 — embedder selection seam. ASTHENOS_EMBED_MODEL
-#             selects the HF embedder (default MiniLM-L6-v2); build() records model_id
-#             + true dim (from the embedded matrix) in the manifest; query() raises
-#             EmbedModelMismatch on a cross-embedder query (silent-cosine-garbage guard).
-# Role:       semantic vector index — build / query / model-selection + provenance guard
-# Depends:    numpy; transformers + torch (mean-pool); samia.core.netconsent (fetch gate)
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.core.vector
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      Carved from memory_vector_index.py
+#             + SLOT-SCALING 2026-06-12 (v1.1): ASTHENOS_EMBED_MODEL embedder-
+#               selection seam. build() records model_id + true dim (from the
+#               embedded matrix) in the manifest; query() raises EmbedModelMismatch
+#               on a cross-embedder query (silent-cosine-garbage guard).
+#             + SEC 2026-06-12: cache-miss model download gated through netconsent.
+# Layer:      core (pure library, no daemon dependency)
+# Role:       semantic vector index over nodes/ — sha-keyed incremental embed build,
+#             cosine top-k query (tombstone- + cross-embedder-aware), and the
+#             ASTHENOS_EMBED_MODEL embedder-selection contract.
+# Stability:  v1.1 -- semantic vector index: build / query / model-selection guard.
+# ErrorModel: SystemExit (no index); EmbedModelMismatch (cross-embedder guard);
+#             RuntimeError (refused model download). FAIL-LOUD on a cross-embedder
+#             query; FAIL-SOFT TOCTOU on build (a node that vanishes mid-build is
+#             skipped, not indexed this pass).
+# Depends:    numpy; transformers + torch (mean-pool); samia.core.netconsent (fetch gate).
 # Exposes:    build, query, info, active_model_id, active_model_dim,
-#             EmbedModelMismatch, tombstone_node, untombstone_node, _embed_batch
-# ErrorModel: SystemExit (no index); EmbedModelMismatch (model guard); RuntimeError
-#             (refused fetch). Fail-loud on cross-embedder; fail-soft TOCTOU on build.
-# ─────────────────────────────────────────────
+#             EmbedModelMismatch, tombstone_node, untombstone_node, _embed_batch.
+# Lines:      505
+# --------------------------------------------------------------------------

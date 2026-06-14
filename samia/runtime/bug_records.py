@@ -49,8 +49,8 @@ _log = logging.getLogger("samia.runtime.bug_records")
 # Constants
 # ---------------------------------------------------------------------------
 
-# PREFIX_TAXONOMY -- What: the 8 valid proposal-id prefixes.
-# PREFIX_TAXONOMY -- Why: AUD84 D1 (revised 2026-05-07 final). Replaces the
+# PREFIX_TAXONOMY — What: the 8 valid proposal-id prefixes.
+# PREFIX_TAXONOMY — Why: AUD84 D1 (revised 2026-05-07 final). Replaces the
 #     single-AUD namespace with categorical prefixes. Future reserved: SEC, PERF.
 PREFIX_TAXONOMY: list[str] = [
     "AUD",   # Audit -- system review reveals warranted change
@@ -63,8 +63,8 @@ PREFIX_TAXONOMY: list[str] = [
     "MISC",  # Miscellaneous / uncategorized -- reviewed by misc-analyzer skill
 ]
 
-# BUG_SOURCE_VALUES -- What: valid values for the found_by / source field.
-# BUG_SOURCE_VALUES -- Why: AUD84 D4 enumerates the 6 discovery surfaces that
+# BUG_SOURCE_VALUES — What: valid values for the found_by / source field.
+# BUG_SOURCE_VALUES — Why: AUD84 D4 enumerates the 6 discovery surfaces that
 #     can emit bug records. Validated at emission time.
 BUG_SOURCE_VALUES: list[str] = [
     "audit",            # AUD77 architecture audit findings
@@ -75,8 +75,8 @@ BUG_SOURCE_VALUES: list[str] = [
     "manual",           # operator manual report via Atoms button
 ]
 
-# BUG_STATUS_VALUES -- What: valid bug lifecycle states.
-# BUG_STATUS_VALUES -- Why: AUD84 D4/D6. Status transitions:
+# BUG_STATUS_VALUES — What: valid bug lifecycle states.
+# BUG_STATUS_VALUES — Why: AUD84 D4/D6. Status transitions:
 #     untriaged -> targeted -> proposal-pending -> proposal-approved -> fixed
 #     untriaged -> wont-fix (operator dismissal)
 BUG_STATUS_VALUES: list[str] = [
@@ -88,8 +88,8 @@ BUG_STATUS_VALUES: list[str] = [
     "wont-fix",
 ]
 
-# NODES_DIR -- What: SAM/IA memory nodes directory.
-# NODES_DIR -- Why: bug records are stored as SAM/IA nodes (type=bug) per D4.
+# NODES_DIR — What: SAM/IA memory nodes directory.
+# NODES_DIR — Why: bug records are stored as SAM/IA nodes (type=bug) per D4.
 #     Uses the same directory as all other memory nodes. Resolved through
 #     samia.core.paths.resolve_memory_root (env -> verified-legacy -> XDG) so
 #     the path is correct in dev, staged-release, and site-packages layouts --
@@ -99,12 +99,12 @@ BUG_STATUS_VALUES: list[str] = [
 #     and the mock.patch(".../NODES_DIR") tests keep their exact contract.
 NODES_DIR = resolve_memory_root(create=False) / "nodes"
 
-# PROPOSALS_DIR -- What: SEWE proposals directory.
-# PROPOSALS_DIR -- Why: bug_send_for_review generates BUG-prefixed proposals here.
+# PROPOSALS_DIR — What: SEWE proposals directory.
+# PROPOSALS_DIR — Why: bug_send_for_review generates BUG-prefixed proposals here.
 PROPOSALS_DIR = Path.home() / ".local" / "share" / "asthenos" / "sewe" / "proposals"
 
-# DOCS_DIR -- What: review doc archive directory.
-# DOCS_DIR -- Why: companion markdown docs for generated BUG proposals.
+# DOCS_DIR — What: review doc archive directory.
+# DOCS_DIR — Why: companion markdown docs for generated BUG proposals.
 DOCS_DIR = Path.home() / "Asthenosphere" / "docs" / "proposals_archive"
 
 
@@ -216,8 +216,8 @@ def emit_bug_node(
     str
         The bug slug (used as the node identifier).
     """
-    # InputValidation -- What: validate source against allowed values.
-    # InputValidation -- Why: system edge; callers may pass unexpected strings.
+    # InputValidation — What: validate source against allowed values.
+    # InputValidation — Why: system edge; callers may pass unexpected strings.
     if source not in BUG_SOURCE_VALUES:
         _log.warning("bug_records: unknown source %r, accepting as-is", source)
 
@@ -227,8 +227,8 @@ def emit_bug_node(
     node_filename = f"bug_{slug}.md"
     node_path = NODES_DIR / node_filename
 
-    # DedupCheck -- What: check if node already exists.
-    # DedupCheck -- Why: AUD84 D7 -- re-discovery increments seen_count.
+    # DedupCheck — What: check if node already exists.
+    # DedupCheck — Why: AUD84 D7 -- re-discovery increments seen_count.
     if node_path.exists():
         try:
             from samia.core.frontmatter import read_node, write_node
@@ -246,8 +246,8 @@ def emit_bug_node(
             _log.warning("bug_records: dedup update failed for %s: %s", slug, exc)
             return slug
 
-    # NewNode -- What: create a new bug node with full D4 frontmatter.
-    # NewNode -- Why: first sighting of this (source, surface, evidence_sig) combo.
+    # NewNode — What: create a new bug node with full D4 frontmatter.
+    # NewNode — Why: first sighting of this (source, surface, evidence_sig) combo.
     fm: dict[str, Any] = {
         "name": title,
         "type": "bug",
@@ -360,9 +360,9 @@ def update_bug_status(slug: str, new_status: str) -> bool:
         write_node(node_path, fm, order, body)
         _log.info("bug_records: updated slug=%s status=%s", slug, new_status)
 
-        # VerifiedOutcomeEmit -- What: emit a verified-outcome spine node when
+        # VerifiedOutcomeEmit — What: emit a verified-outcome spine node when
         #     a bug transitions to 'fixed'.
-        # VerifiedOutcomeEmit -- Why: the bug reaching 'fixed' is the domain
+        # VerifiedOutcomeEmit — Why: the bug reaching 'fixed' is the domain
         #     verdict point (goal achieved). emit_samia writes a decay-aware
         #     spine node so the outcome is queryable by future sessions. Fire-
         #     and-forget: failure here must never stall or raise into the
@@ -380,13 +380,13 @@ def update_bug_status(slug: str, new_status: str) -> bool:
                     extra={"bug_id": slug,
                            "bug_status_transition": "->fixed"},
                 )
-                # What: Resolve to the SAM memory root (same as chiron.py:46).
-                # Why: The old code appended / 'memory' to a path that ALREADY
-                #      resolved to .../memory, creating .../memory/memory (phantom).
-                #      emit_samia would mkdir + write nodes there, but nothing scans it.
-                memory_dir = (
-                    Path(__file__).resolve().parent.parent.parent.parent
-                )
+                # What: Resolve to the SAM memory root via the shared resolver.
+                # Why: Path(__file__).parent*4 resolves to the staging/drive root in
+                #      the staged/site-packages layout (verified: /mnt/slot01), not the
+                #      memory root — emit_samia would mkdir + write the outcome node
+                #      where no consumer scans. resolve_memory_root (env→verified-legacy
+                #      →XDG) is layout-safe and matches NODES_DIR.
+                memory_dir = resolve_memory_root(create=False)
                 emit_samia(rec, memory_dir=memory_dir)
             except Exception as exc:
                 _log.warning(
@@ -459,8 +459,8 @@ def send_for_review(
     if not bug_slugs:
         return []
 
-    # LoadBugNodes -- What: read frontmatter + body for each slug.
-    # LoadBugNodes -- Why: need full content for proposal auto-skeleton.
+    # LoadBugNodes — What: read frontmatter + body for each slug.
+    # LoadBugNodes — Why: need full content for proposal auto-skeleton.
     bugs: list[dict[str, Any]] = []
     try:
         from samia.core.frontmatter import read_node
@@ -482,8 +482,8 @@ def send_for_review(
     if not bugs:
         return []
 
-    # GroupByMode -- What: partition bugs into proposal groups based on mode.
-    # GroupByMode -- Why: D5 targeting modes determine how bugs bundle into proposals.
+    # GroupByMode — What: partition bugs into proposal groups based on mode.
+    # GroupByMode — Why: D5 targeting modes determine how bugs bundle into proposals.
     groups: list[list[dict[str, Any]]]
     if mode == "1bug":
         groups = [[b] for b in bugs]
@@ -505,8 +505,8 @@ def send_for_review(
         proposal_id = _emit_bug_proposal(group, now, date_str)
         if proposal_id:
             proposal_ids.append(proposal_id)
-            # StatusUpdate -- What: transition each bug to proposal-pending + link.
-            # StatusUpdate -- Why: D6 lifecycle: targeted -> proposal-pending.
+            # StatusUpdate — What: transition each bug to proposal-pending + link.
+            # StatusUpdate — Why: D6 lifecycle: targeted -> proposal-pending.
             for b in group:
                 update_bug_status(b["slug"], "proposal-pending")
                 link_bug_to_proposal(b["slug"], proposal_id)
@@ -526,8 +526,8 @@ def _emit_bug_proposal(
     Why:  AUD84 D6 auto-skeleton. operator_review_state is always 'pending'
           per the proposal-first axiom.
     """
-    # TitleGen -- What: auto-generate title from bug summaries.
-    # TitleGen -- Why: D6 spec -- title from bug-node summaries.
+    # TitleGen — What: auto-generate title from bug summaries.
+    # TitleGen — Why: D6 spec -- title from bug-node summaries.
     if len(bugs) == 1:
         title = bugs[0]["fm"].get("name", "Bug fix")
     else:
@@ -536,8 +536,8 @@ def _emit_bug_proposal(
         if len(surfaces) > 3:
             title += f" (+{len(surfaces) - 3} more)"
 
-    # SeverityMax -- What: use the highest severity across bundled bugs.
-    # SeverityMax -- Why: D6 spec -- severity is max across selected bugs.
+    # SeverityMax — What: use the highest severity across bundled bugs.
+    # SeverityMax — Why: D6 spec -- severity is max across selected bugs.
     sev_order = {"critical": 4, "high": 3, "medium": 2, "low": 1}
     max_sev = max(
         (sev_order.get(b["fm"].get("severity", "medium"), 2) for b in bugs),
@@ -545,14 +545,14 @@ def _emit_bug_proposal(
     )
     severity = {4: "critical", 3: "high", 2: "medium", 1: "low"}.get(max_sev, "medium")
 
-    # AffectedSurfaces -- What: union of bug-node affected_surface fields.
-    # AffectedSurfaces -- Why: D6 spec -- surfaced in the proposal scope block.
+    # AffectedSurfaces — What: union of bug-node affected_surface fields.
+    # AffectedSurfaces — Why: D6 spec -- surfaced in the proposal scope block.
     affected_surfaces = sorted(set(
         b["fm"].get("affected_surface", "unknown") for b in bugs
     ))
 
-    # LinkedTo -- What: bug node names + any AUD/BUG ids already referenced.
-    # LinkedTo -- Why: D6 spec -- linked_to for cross-reference.
+    # LinkedTo — What: bug node names + any AUD/BUG ids already referenced.
+    # LinkedTo — Why: D6 spec -- linked_to for cross-reference.
     linked_to: list[str] = []
     for b in bugs:
         linked_to.append(f"bug_{b['slug']}")
@@ -560,8 +560,8 @@ def _emit_bug_proposal(
         if existing_link:
             linked_to.append(existing_link)
 
-    # EvidenceConcat -- What: concatenate bug-node frontmatter + body excerpts.
-    # EvidenceConcat -- Why: D6 spec -- evidence from bug records.
+    # EvidenceConcat — What: concatenate bug-node frontmatter + body excerpts.
+    # EvidenceConcat — Why: D6 spec -- evidence from bug records.
     evidence: list[dict[str, str]] = []
     for b in bugs:
         ev_text = (
@@ -574,13 +574,13 @@ def _emit_bug_proposal(
         )
         evidence.append({"fact": ev_text.strip()})
 
-    # SlugGen -- What: generate proposal slug from title.
-    # SlugGen -- Why: filesystem-safe, unique proposal filename.
+    # SlugGen — What: generate proposal slug from title.
+    # SlugGen — Why: filesystem-safe, unique proposal filename.
     slug = re.sub(r"[^a-z0-9]+", "-", title.lower())[:40].strip("-")
     proposal_id = f"BUG-{date_str}-{slug}-v01"
 
-    # DocWrite -- What: write companion review markdown doc.
-    # DocWrite -- Why: operator standing rule -- proposals without docs get
+    # DocWrite — What: write companion review markdown doc.
+    # DocWrite — Why: operator standing rule -- proposals without docs get
     #     sent back to revising.
     doc_dir = DOCS_DIR / date_str
     doc_dir.mkdir(parents=True, exist_ok=True)
@@ -612,8 +612,8 @@ def _emit_bug_proposal(
         _log.warning("bug_records: failed to write review doc: %s", exc)
         doc_path = None
 
-    # ProposalWrite -- What: write the BUG-prefixed SEWE proposal JSON.
-    # ProposalWrite -- Why: D6 auto-skeleton. operator_review_state='pending'
+    # ProposalWrite — What: write the BUG-prefixed SEWE proposal JSON.
+    # ProposalWrite — Why: D6 auto-skeleton. operator_review_state='pending'
     #     per the proposal-first axiom (standing axiom 2026-05-06).
     proposal = {
         "id": proposal_id,
@@ -772,8 +772,14 @@ def register_ops() -> None:
 
 # --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.bug_records
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
 # Phase:      AUD84 -- Phases 1+2 (schema, IPC ops, proposal auto-skeleton)
 # Layer:      runtime (in-daemon, IPC-exposed, event-driven discovery hooks)
+# Role:       bug-record lifecycle as type=bug memory nodes — dedup-hashed emission from
+#             6 discovery surfaces, status transitions, and the BUG-prefixed SEWE proposal
+#             auto-skeleton; 4 IPC ops wire the workflow to Atoms/CLI.
 # Stability:  v0.1.0 -- initial implementation
 # ErrorModel: fail-open for node writes (log and continue). IPC handlers
 #             return error dicts, never raise. Dedup is best-effort (hash
@@ -785,5 +791,5 @@ def register_ops() -> None:
 # Exposes:    PREFIX_TAXONOMY, BUG_SOURCE_VALUES, BUG_STATUS_VALUES,
 #             emit_bug_node, list_bug_nodes, update_bug_status,
 #             link_bug_to_proposal, send_for_review, register_ops.
-# Lines:      ~480
+# Lines:      792
 # --------------------------------------------------------------------------

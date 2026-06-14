@@ -1,4 +1,4 @@
-"""Tests for TUNE-2026-06-08 contradiction-detector tuning.
+"""samia.runtime.test_contradiction_tuning — tests for TUNE-2026-06-08 contradiction-detector tuning.
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the three coordinated usability fixes that make the
@@ -367,17 +367,18 @@ if __name__ == "__main__":
     unittest.main()
 
 
-# --------------------------------------------------------------------------
 # [Asthenosphere] samia.runtime.test_contradiction_tuning
-# Phase:      TUNE-2026-06-08 (type-scoping + dedicated judge backend + double-
-#             load singleton fix)
-# Layer:      test
-# Stability:  v1.0
-# ErrorModel: unittest assertions; tempfile dirs; mocked inference + frontmatter;
-#             NO real model load (no gguf is ever opened by llama_cpp).
-# Depends:    samia.runtime.contradiction, samia.runtime.inference,
-#             samia.core.bio, unittest, unittest.mock, tempfile, os, pathlib.
-# Exposes:    TestExcludedTypes, TestFinderDropsExcludedMatches,
-#             TestPassiveSweepSkipsExcluded, TestActiveSetExcludesEpisodic,
-#             TestJudgeRoutesToDedicatedBackend, TestBackendSingleton.
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      TUNE-2026-06-08 (type-scoping + dedicated judge backend + double-load singleton fix)
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.contradiction, samia.runtime.inference,
+#             samia.core.bio — type-scoping exclusion, dedicated fast judge
+#             routing/fail-soft, load-once backend singleton
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.runtime.contradiction, samia.runtime.inference, samia.core.bio
+# Exposes:    — (test module)
+# Lines:      386
 # --------------------------------------------------------------------------

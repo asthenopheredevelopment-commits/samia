@@ -1,4 +1,4 @@
-"""test_semantic_threshold.py — per-population contradiction thresholds.
+"""samia.runtime.test_semantic_threshold — tests for per-population contradiction thresholds.
 
 What: verifies TUNE-2026-06-10 (2): candidate pairs involving a type:semantic
   node must clear _SEMANTIC_PAIR_THRESHOLD (default 0.92), while hand-written
@@ -114,9 +114,16 @@ def test_env_override(monkeypatch, store):
                            raising=False)
         importlib.reload(con)
 
-# ---------------------------------------------------------------------------
-# Metadata
-#   project: SAM/IA contradiction detector — per-population thresholds
-#   created: 2026-06-10  author: Claude   version: 1.0.0
-#   contract: tmp stores only; no live-store access
-# ---------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.test_semantic_threshold
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      TUNE-2026-06-10 (2) per-population contradiction thresholds
+# Layer:      test (pytest)
+# Role:       tests for samia.runtime.contradiction — semantic-pair vs recall-first thresholds on both candidate and incoming sides, plus env override
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    pytest + samia.core.vector, samia.core.frontmatter, samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      131
+# ------------------------------------------------------------------------------

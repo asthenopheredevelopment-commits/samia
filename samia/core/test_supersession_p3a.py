@@ -1,4 +1,4 @@
-"""Tests for the P3a contradiction-supersession detector core — FEAT-2026-06-07 P3a.
+"""samia.core.test_supersession_p3a — tests for the P3a contradiction-supersession detector core (FEAT-2026-06-07 P3a).
 
 Layer 1 (Owns / Depends):
     Owns:    Unit tests for the reversible negative-consolidation primitives:
@@ -264,3 +264,18 @@ class TestSupersessionCandidateFinder(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# [Asthenosphere] samia.core.test_supersession_p3a
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      FEAT-2026-06-07 P3a — contradiction-supersession detector core (reversible negative consolidation)
+# Layer:      test (pytest)
+# Role:       tests for samia.core.ia + vector + contradiction — full-archive forget + zero-dangling cascade, byte-exact restore + vector un-tombstone, self-healing auto-restore, untombstone inverse, and the candidate-finder scope + jaccard filter
+# Stability:  stable (test)
+# ErrorModel: pytest assertions; AssertionError on failure
+# Depends:    unittest + samia.core.ia, samia.core.vector, samia.core.web_store, samia.runtime.contradiction
+# Exposes:    — (test module)
+# Lines:      283
+# ------------------------------------------------------------------------------

@@ -1,14 +1,29 @@
 """samia.runtime.scheduler — time-based maintenance job runner.
 
-Runs inside the daemon's scheduler thread. Walks a static job table on
-a 60-second tick; fires any job whose interval has elapsed. Coalesces
-overruns (no backlog queue). Persists last-run timestamps to survive
-daemon restarts. Backs off on repeated failures (3x consecutive throws
--> 4x interval, reset on success).
+Layer 1 (Owns / Depends):
+    Owns:    start(memory_dir, log_fn) -> None  (spawns the scheduler thread;
+                 idempotent — a second call while alive is a no-op).
+             stop() -> None  (sets the stop event, joins the thread).
+    Depends: json, threading, time, pathlib, typing (stdlib only). Job callables
+             are resolved at import via fail-soft late imports — samia.core.tier
+             (decay_tick), samia.core.context_extension (idle_replay_tick,
+             sm2_sweep_tick), samia.core.attention (gc), samia.core.opencode_drain
+             (drain_tick); any that fail to import resolve to None (stubbed).
 
-Public API (called by samia.runtime.daemon):
-  start(memory_dir, log_fn) -> None   # spawns scheduler thread
-  stop()                    -> None   # sets stop event, joins thread
+Layer 2 (What / Why):
+    What: runs inside the daemon's scheduler thread. _tick_loop walks a static
+          job table on a 60s tick and fires any job whose effective interval has
+          elapsed; _run_job invokes the callable, records last_run/outcome, and
+          applies backoff. last-run timestamps are persisted to / restored from
+          <memory_dir>/.runtime/scheduler_state.json so cooldowns survive a
+          daemon restart.
+    Why:  maintenance work (decay, replay, GC, outcome drain) must run on long
+          cadences without a backlog: the tick coalesces overruns (it fires once
+          when due, it does not queue missed runs). Backoff (3 consecutive throws
+          -> 4x interval, reset on success) keeps a persistently-failing job from
+          hammering the daemon. Resolving callables to None when their module is
+          absent lets the scheduler start in a partial install (a stubbed job is
+          a logged no-op, not a crash).
 
 Design doc: plans/sam_ia_runtime_design.md, sections 1.3 and 6.
 """
@@ -230,6 +245,9 @@ def _run_job(job: dict, memory_dir: Path, log_fn: Callable) -> None:
         job["effective_interval_s"] = job["interval_s"]
         return
 
+    # RunAndBackoff — What: on success reset the failure counter + restore the base
+    #     interval; on throw bump the counter and, at/over the threshold, stretch the
+    #     effective interval by the backoff multiplier.
     try:
         result = fn(memory_dir)
         job["last_run_unix"] = time.time()
@@ -250,6 +268,10 @@ def _run_job(job: dict, memory_dir: Path, log_fn: Callable) -> None:
         else:
             log_fn(f"[scheduler] {name}: error ({job['consecutive_failures']}/"
                    f"{_BACKOFF_THRESHOLD}) — {exc}")
+    # RunAndBackoff — Why: last_run_unix is stamped on BOTH paths so a failing job still
+    #     respects its cooldown (a throw does not busy-retry every tick); stretching the
+    #     interval after _BACKOFF_THRESHOLD consecutive throws keeps a broken job from
+    #     hammering the daemon, and any success resets it back to the base cadence.
 
 
 def _summarize(result: Any) -> str:
@@ -277,6 +299,9 @@ def _tick_loop() -> None:
         status = "live" if job["callable"] is not None else "stubbed"
         log_fn(f"[scheduler]   {job['name']}: {status}, interval={job['interval_s']}s")
 
+    # FireDueJobs — What: each tick, fire every job whose elapsed time has reached its
+    #     required interval, then persist state once if anything fired; wait on the stop
+    #     event between ticks.
     while not _stop_event.is_set():
         now = time.time()
         fired_any = False
@@ -295,6 +320,10 @@ def _tick_loop() -> None:
 
         # Sleep in short increments so stop() is responsive
         _stop_event.wait(timeout=_TICK_INTERVAL_S)
+    # FireDueJobs — Why: required = max(effective, throttle_min) so backoff can only ever
+    #     lengthen the cadence, never undercut a job's hard minimum; state is saved only on
+    #     a tick that fired (cheap idle ticks), and waiting on _stop_event (not sleep) lets
+    #     stop() interrupt the wait so the thread joins promptly.
 
     log_fn("[scheduler] stopped")
 
@@ -304,8 +333,8 @@ def _tick_loop() -> None:
 # ---------------------------------------------------------------------------
 
 def start(memory_dir, log_fn: Callable) -> None:
-    memory_dir = Path(memory_dir)   # accept str | Path
     """Spawn the scheduler thread. Idempotent — second call is a no-op."""
+    memory_dir = Path(memory_dir)   # accept str | Path
     global _thread, _memory_dir, _log_fn
 
     with _lock:
@@ -332,3 +361,28 @@ def stop() -> None:
     t.join(timeout=10)
     with _lock:
         _thread = None
+
+
+# --------------------------------------------------------------------------
+# [Asthenosphere] samia.runtime.scheduler
+# Author:     code_warrior
+# Project:    Asthenosphere — SAM/IA
+# Version:    1.0.0
+# Phase:      AUD26 (runtime daemon) + FEAT-verified-outcome-writeback
+#             (opencode_outcomes_drain job added to the table)
+# Layer:      runtime (long-lived process; daemon scheduler thread)
+# Role:       time-based maintenance job runner — a daemon thread that walks a static
+#             job table on a 60s tick, fires each job whose effective interval has
+#             elapsed (coalescing overruns), persists last-run cooldowns across
+#             restarts, and backs off a job that throws 3x consecutively.
+# Stability:  stable -- 60s tick over a static job table; coalesced overruns,
+#             persisted cooldowns, 3x-fail -> 4x-interval backoff.
+# ErrorModel: job callables resolve to None when their module is absent (a stubbed
+#             job is a logged no-op). A job throw is caught per-run and drives
+#             backoff; state-persist and individual jobs never crash the tick loop.
+# Depends:    json, threading, time, pathlib, typing (stdlib).
+#             samia.core.tier / context_extension / attention / opencode_drain
+#             (all OPTIONAL, fail-soft late imports at module load).
+# Exposes:    start, stop.
+# Lines:      385
+# --------------------------------------------------------------------------
