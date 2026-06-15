@@ -1,5 +1,8 @@
 # SAM/IA [Shallow Abyss Manifest/Infinite Abyss Compression]
 
+[![tests](https://github.com/asthenopheredevelopment-commits/samia/actions/workflows/tests.yml/badge.svg)](https://github.com/asthenopheredevelopment-commits/samia/actions/workflows/tests.yml)
+[![python](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+
 Biologically-inspired persistent memory system for long-running AI agents and
 personal knowledge work. Stores, retrieves, decays, and repairs memories across
 sessions using a tiered architecture modeled on biological consolidation.
