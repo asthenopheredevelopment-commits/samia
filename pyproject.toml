@@ -9,16 +9,33 @@ description = "SAM/IA - biologically-inspired persistent memory: tiered storage,
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-keywords = ["memory", "llm", "agent-memory", "retrieval", "consolidation"]
+keywords = ["memory", "llm", "agent-memory", "retrieval", "consolidation", "mcp"]
 
 dependencies = [
     "numpy>=1.24",
     "sentence-transformers>=2.2",   # pulls torch + transformers (the embedder)
+    "mcp>=1.0",                     # FastMCP stdio server (the samia-mcp-server entry point)
 ]
 
 [project.optional-dependencies]
 llm = ["llama-cpp-python>=0.3"]     # local gguf arms: judge, fact extraction, synthesis
 test = ["pytest>=8"]
+# sandboxed: no pip deps — bwrap/firejail are SYSTEM packages. `samia daemon run
+# --sandboxed` probes for them at runtime and prints how to install them.
+
+[project.scripts]
+# One canonical core, many thin front-ends (FEAT-2026-06-14-samia-install-ux).
+samia = "samia.cli:main"                         # user CLI: init / daemon / mcp-server / status
+samia-mcp-server = "samia.mcp_server_main:main"  # the stdio MCP server `.mcp.json` launches
+samia-init = "samia.cli:init_main"               # bare alias for `samia init`
 
 [tool.setuptools.packages.find]
 include = ["samia*"]
+# The DEV-ONLY GEODE growth/consolidation arm is never in the public wheel.
+exclude = ["samia.runtime.consolidation*"]
+
+[tool.setuptools.package-data]
+# Ship the systemd unit template (and any schema/seed files referenced at
+# `samia init`). The precise seed-file globs are an open item — see the install-UX
+# packaging NOTES — start with the unit template.
+"samia" = ["**/*.template"]
