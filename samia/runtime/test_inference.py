@@ -28,6 +28,16 @@ import os
 import socket
 import tempfile
 import time
+
+# Real-backend test gate — needs llama-cpp-python installed AND a gguf model on
+# disk (path in $SAMIA_TEST_GGUF). CI provides both; locally it skips unless set.
+try:
+    import llama_cpp as _llama_cpp  # noqa: F401
+    _HAS_LLAMA_CPP = True
+except Exception:
+    _HAS_LLAMA_CPP = False
+_TEST_GGUF = os.environ.get("SAMIA_TEST_GGUF", "")
+_TEST_GGUF = _TEST_GGUF if (_TEST_GGUF and os.path.isfile(_TEST_GGUF)) else ""
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -349,11 +359,16 @@ class TestLlamaCppBackendSkippedIfUnavailable(unittest.TestCase):
         finally:
             os.unlink(path)
 
-    @unittest.skipUnless(False, "llama_cpp not installed -- expected skip")
+    @unittest.skipUnless(_HAS_LLAMA_CPP and bool(_TEST_GGUF),
+                         "needs llama-cpp-python + a gguf at $SAMIA_TEST_GGUF")
     def test_real_backend_loads(self):
-        # This test only runs if llama_cpp IS installed AND a model exists.
-        # It serves as a placeholder for operator-side validation.
-        pass
+        # Real-backend smoke: load an actual gguf and generate a few tokens.
+        # Generic over the model — point SAMIA_TEST_GGUF at any gguf (a small LLM
+        # today, a GEODE gguf later). CI provides a tiny model so this runs on
+        # every push and exercises the real llama_cpp load+complete path.
+        backend = LlamaCppBackend(model_path=_TEST_GGUF, n_ctx=512)
+        out = backend.complete("The capital of France is", max_tokens=8)
+        self.assertIsInstance(out, str)
 
 
 # ---------------------------------------------------------------------------

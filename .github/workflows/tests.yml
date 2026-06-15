@@ -23,25 +23,22 @@ jobs:
           cache: pip
 
       - name: Install
-        # numpy<2 pins to the 1.x ABI the upstream stack (scipy via
-        # sentence-transformers) is built against; CI runners have no GPU so the
-        # CPU torch wheel is pulled automatically.
+        # numpy<2 pins to the 1.x ABI the upstream stack is built against. The
+        # [llm] extra adds llama-cpp-python (CPU wheel) for the real-backend test.
         run: |
           python -m pip install --upgrade pip
-          pip install "numpy<2" -e ".[test]"
+          pip install "numpy<2" -e ".[test,llm]"
 
       - name: Cache the HuggingFace embedder
-        # After the first run populates it, later runs restore the model and make
-        # zero HuggingFace requests (avoids the shared-runner-IP rate limit).
+        # After the first run populates it, later runs make zero HF requests.
         uses: actions/cache@v4
         with:
           path: ~/.cache/huggingface
           key: hf-all-MiniLM-L6-v2
 
       - name: Pre-fetch the embedder once
-        # Download the embedder a SINGLE time up front (with retries to ride out
-        # HF's 429 rate-limit). The 43 semantic tests then read it from local
-        # disk instead of each triggering its own download (the 429 cause).
+        # Download the embedder a SINGLE time up front (the 43 semantic tests
+        # then read it from disk instead of each hitting HF — the 429 cause).
         run: |
           for i in 1 2 3 4 5; do
             python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" && exit 0
@@ -49,9 +46,32 @@ jobs:
           done
           echo "could not fetch the embedder after 5 attempts"; exit 1
 
+      - name: Cache the test gguf model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/samia-test-models
+          key: gguf-stories15M-q4_0
+
+      - name: Fetch a tiny gguf for the real-backend test
+        # A ~10MB model is enough to exercise the llama_cpp load + complete path
+        # (the test only asserts it returns a string). Swap this for a GEODE gguf
+        # later by pointing SAMIA_TEST_GGUF at it.
+        run: |
+          mkdir -p ~/.cache/samia-test-models
+          MODEL="$HOME/.cache/samia-test-models/stories15M-q4_0.gguf"
+          if [ ! -f "$MODEL" ]; then
+            for i in 1 2 3; do
+              curl -fsSL -o "$MODEL" \
+                https://huggingface.co/ggml-org/models/resolve/main/tinyllamas/stories15M-q4_0.gguf && break
+              echo "gguf fetch attempt $i failed; waiting 20s"; sleep 20
+            done
+          fi
+          test -f "$MODEL"
+          echo "SAMIA_TEST_GGUF=$MODEL" >> "$GITHUB_ENV"
+
       - name: Run the test suite
-        # No GPU on the runner; the one GPU-gated test skips automatically. The
-        # embedder is already cached above, so no test hits the network.
+        # No GPU on the runner; embedder + gguf are cached above, so no test hits
+        # the network. SAMIA_TEST_GGUF (set above) makes the real-backend test run.
         env:
           CUDA_VISIBLE_DEVICES: ""
           ASTHENOS_MODEL_AUTOFETCH: "1"
