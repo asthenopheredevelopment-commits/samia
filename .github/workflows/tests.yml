@@ -32,6 +32,10 @@ jobs:
 
       - name: Run the test suite
         # No GPU on the runner; the one GPU-gated test skips automatically.
+        # ASTHENOS_MODEL_AUTOFETCH=1 lets the runner download the
+        # sentence-transformers embedder (all-MiniLM-L6-v2) the semantic-recall
+        # tests need — it is off by default (the network-actions security gate).
         env:
           CUDA_VISIBLE_DEVICES: ""
+          ASTHENOS_MODEL_AUTOFETCH: "1"
         run: pytest samia/ -q
