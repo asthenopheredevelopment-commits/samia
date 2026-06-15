@@ -30,11 +30,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install "numpy<2" -e ".[test]"
 
+      - name: Cache the HuggingFace embedder
+        # After the first run populates it, later runs restore the model and make
+        # zero HuggingFace requests (avoids the shared-runner-IP rate limit).
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-all-MiniLM-L6-v2
+
+      - name: Pre-fetch the embedder once
+        # Download the embedder a SINGLE time up front (with retries to ride out
+        # HF's 429 rate-limit). The 43 semantic tests then read it from local
+        # disk instead of each triggering its own download (the 429 cause).
+        run: |
+          for i in 1 2 3 4 5; do
+            python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')" && exit 0
+            echo "embedder fetch attempt $i hit a snag (likely HF 429); waiting 30s"; sleep 30
+          done
+          echo "could not fetch the embedder after 5 attempts"; exit 1
+
       - name: Run the test suite
-        # No GPU on the runner; the one GPU-gated test skips automatically.
-        # ASTHENOS_MODEL_AUTOFETCH=1 lets the runner download the
-        # sentence-transformers embedder (all-MiniLM-L6-v2) the semantic-recall
-        # tests need — it is off by default (the network-actions security gate).
+        # No GPU on the runner; the one GPU-gated test skips automatically. The
+        # embedder is already cached above, so no test hits the network.
         env:
           CUDA_VISIBLE_DEVICES: ""
           ASTHENOS_MODEL_AUTOFETCH: "1"
