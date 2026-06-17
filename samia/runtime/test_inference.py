@@ -364,7 +364,7 @@ class TestLlamaCppBackendSkippedIfUnavailable(unittest.TestCase):
     def test_real_backend_loads(self):
         # Real-backend smoke: load an actual gguf and generate a few tokens.
         # Generic over the model — point SAMIA_TEST_GGUF at any gguf (a small LLM
-        # today, a GEODE gguf later). CI provides a tiny model so this runs on
+        # today, a larger gguf later). CI provides a tiny model so this runs on
         # every push and exercises the real llama_cpp load+complete path.
         backend = LlamaCppBackend(model_path=_TEST_GGUF, n_ctx=512)
         out = backend.complete("The capital of France is", max_tokens=8)

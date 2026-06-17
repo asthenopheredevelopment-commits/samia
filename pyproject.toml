@@ -31,7 +31,7 @@ samia-init = "samia.cli:init_main"               # bare alias for `samia init`
 
 [tool.setuptools.packages.find]
 include = ["samia*"]
-# The DEV-ONLY GEODE growth/consolidation arm is never in the public wheel.
+# Dev-only internal modules are excluded from the public wheel.
 exclude = ["samia.runtime.consolidation*"]
 
 [tool.setuptools.package-data]

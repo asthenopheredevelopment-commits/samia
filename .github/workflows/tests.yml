@@ -54,7 +54,7 @@ jobs:
 
       - name: Fetch a tiny gguf for the real-backend test
         # A ~10MB model is enough to exercise the llama_cpp load + complete path
-        # (the test only asserts it returns a string). Swap this for a GEODE gguf
+        # (the test only asserts it returns a string). Swap this for a larger gguf
         # later by pointing SAMIA_TEST_GGUF at it.
         run: |
           mkdir -p ~/.cache/samia-test-models
