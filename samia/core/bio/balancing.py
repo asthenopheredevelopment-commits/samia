@@ -630,19 +630,20 @@ def accrue(sittings: list,
                 # are untouched — the spaced-boost path owns those, and the credit NEVER earns the
                 # boost, so STRONG still requires a real >= 24h reconfirmation.
                 if intraday_credit_of is not None and gap < EPI_LOCK_GAP_S:
-                    pre_id_S = st.S
                     st.S += max(0.0, intraday_credit_of(key))
-                    # INTRADAY-1 (audit 2026-06-20): intra-day credit may lift S into the WEAK tier
-                    # (the feature's purpose — same-day recurrence becomes provisionally surfaceable)
-                    # but must NEVER cross the STRONG bar. The design contract is that STRONG requires
-                    # a real >=24h cross-session reconfirmation (the gap-gated spaced boost above); the
-                    # floor counts distinct OCCASIONS not DAYS, so without this clamp a long same-day
-                    # burst summed intra-day credit past 3.0 (the in-code "never earned intra-day"
-                    # promise was unenforced). Mirror the outcome-AUTO clamp: if the edge had not
-                    # ALREADY reached STRONG via real (locked) deposits, cap the credited S just below
-                    # the strong bar. A genuine multi-day run (pre_id_S already >= STRONG) is untouched.
-                    if pre_id_S < EPI_PROMOTE_S:
-                        st.S = min(st.S, EPI_PROMOTE_S - 1e-6)
+                # INTRADAY-1 (audit RE-FIX 2026-06-20): a SAME-DAY deposit (the base s_gap*c_count AND
+                # any intra-day credit) must NEVER reach the STRONG bar — STRONG requires a real >=24h
+                # cross-session reconfirmation (reps>=2, advanced ONLY by the locked-gap _sm2_step
+                # below). The PRIOR clamp read pre_S AFTER the base deposit, so once accumulated S
+                # crossed 3.0 the guard disabled ITSELF and a multi-occasion same-day burst ran away
+                # past STRONG (adversary-reproduced breach at n_occ>=6). Clamp on the RUN STATE instead:
+                # while this is a same-day deposit (gap<lock) AND the run has not yet earned a cross-
+                # session reconfirm (reps<2), cap S just below STRONG. WEAK (1.5<=S<3.0) is still
+                # reachable same-day (the feature); the cap lifts once a genuine >=24h reconfirm makes
+                # reps>=2. The opening deposit (gap==lock) is exempt (gap<lock is False). Parity-safe:
+                # no harness same-day fixture reaches 3.0 (B burst ~1.94), so the pure path is unchanged.
+                if gap < EPI_LOCK_GAP_S and st.reps < 2:
+                    st.S = min(st.S, EPI_PROMOTE_S - 1e-6)
                 if EPI_S_CAP > 0.0:
                     st.S = min(st.S, EPI_S_CAP)   # FEAT-2026-06-20: hard S ceiling -> no strength
                     #                               explosion from sustained/flooded recurrence.

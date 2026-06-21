@@ -261,7 +261,14 @@ def _save_edge_weights(memory_dir: Path, d: dict) -> None:
     """
     paths = _bio_paths(memory_dir)
     paths["bio_dir"].mkdir(parents=True, exist_ok=True)
-    paths["edge_weights"].write_text(json.dumps(d, indent=2), encoding="utf-8")
+    # ATOMIC write (audit 2026-06-20): tmp + os.replace, mirroring the other writers in this module
+    # (e.g. _save_marginal_counts:203-205). A direct write_text could truncate the live recall graph on
+    # a mid-write crash; this matters once A' (veto-as-recall-filter) APPLY writes here. _load_edge_
+    # weights is fail-soft on a corrupt file, but atomicity avoids the corruption in the first place.
+    fp = paths["edge_weights"]
+    tmp = fp.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(d, indent=2), encoding="utf-8")
+    os.replace(tmp, fp)
 
 
 def _attractor_count(weights: dict) -> int:

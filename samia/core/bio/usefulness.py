@@ -98,7 +98,18 @@ def verdict_from_parsed(parsed) -> Optional[dict]:
     # pairs (occ488), but the sticky-2-fold guard (apply_sticky) keeps a flickering pair OPEN. (_W_*
     # kept for the shadow ledger / future re-tuning as more live pairs accrue.)
     rubric = max(topical, causal, corecall)
-    raw_veto = bundle or (rubric < USEFULNESS_MIN_SCORE)
+    # BUNDLE is now ADVISORY-ONLY (recorded in the verdict, NOT an independent veto) — audit
+    # re-measure 2026-06-20. Two findings forced this: (1) the co-occurrence topology mediators are
+    # DEGENERATE on the live store (every promotable pair shares the same mega-sitting mediator set,
+    # so "require a corroborating mediator to act on a bundle" cannot separate genuine from bundle);
+    # (2) the 4B verifier FALSE-flags the genuine same-pipeline pair (vision_distill_arc::
+    # vision_distill_phase10) mechanical_bundle_artifact=True at conf 0.9 while simultaneously rating
+    # it topical 0.3 and affirming the shared subject. The RELIABLE discriminator is the relatedness
+    # max-axis itself (genuine ~0.3 vs true-bundle/unrelated ~0.0): a real mechanical bundle has NO
+    # subject relation, so rubric < MIN_SCORE already vetoes it; letting the noisy bundle flag override
+    # a genuine axis signal IS the false-veto. So a bundle only "counts" when the axes ALSO show no
+    # relation — which the threshold already captures. Veto purely on the relatedness floor.
+    raw_veto = rubric < USEFULNESS_MIN_SCORE
     return {"topical": topical, "causal": causal, "expect_corecall": corecall,
             "mechanical_bundle_artifact": bundle, "confidence": round(conf, 4),
             "rubric_score": round(rubric, 4), "raw_veto": bool(raw_veto),

@@ -336,6 +336,81 @@ def outcome_shadow_enabled(memory_dir=None) -> bool:
             or outcome_apply_enabled(memory_dir))
 
 
+# --- A' veto-as-recall-filter (FEAT-2026-06-20). The subsystem's FIRST live-store SUBTRACT: the
+# usefulness veto identifies promotable edges that are mechanical bundles / unrelated (e.g. the
+# sewe_format_blocks::vision_distill pairs sitting at recall-graph w=1.0); this DOWN-WEIGHTS those in
+# the live recall graph (edge_weights.json) so the junk stops out-ranking genuine associations. Because
+# it is the first SUBTRACT, it is shadow-first + DOUBLE-gated + fail-soft. Default OFF.
+EPI_RECALL_FILTER_FACTOR = 0.5   # down-weight a vetoed recall-graph edge to this FRACTION of its w
+EPI_RECALL_FILTER_MIN_W = 0.5    # only act on edges currently ABOVE this w (the high-w junk; never
+                                 # touch already-low edges — keeps the subtract minimal + targeted)
+
+
+def recall_filter_apply_enabled(memory_dir=None) -> bool:
+    """A' veto-as-recall-filter — APPLY: WRITE the down-weight to edge_weights.json (the live recall
+    graph). The FIRST live-store SUBTRACT in this subsystem. Default OFF — the deliberate switch the
+    operator flips ONLY after the shadow window confirms it down-weights ONLY genuine junk."""
+    return _gate(memory_dir, "ASTHENOS_EPI_RECALL_FILTER_APPLY", ".epiphanies_recall_filter_apply")
+
+
+def recall_filter_shadow_enabled(memory_dir=None) -> bool:
+    """A' veto-as-recall-filter — SHADOW: compute + LOG the would-be down-weights only; edge_weights is
+    NEVER written. Default OFF; implied by apply."""
+    return (_gate(memory_dir, "ASTHENOS_EPI_RECALL_FILTER_SHADOW", ".epiphanies_recall_filter_shadow")
+            or recall_filter_apply_enabled(memory_dir))
+
+
+def _recall_filter_shadow_log_path(memory_dir):
+    return _bio_paths(memory_dir)["bio_dir"] / "epiphanies_recall_filter_shadow.jsonl"
+
+
+def _run_recall_filter(memory_dir, vetoed_keys, occ) -> dict:
+    """A' veto-as-recall-filter (SHADOW/APPLY). For each edge the usefulness veto REJECTED (content-
+    unrelated / mechanical bundle) that is ALSO a high-w live recall-graph edge, compute the would-be
+    down-weight. SHADOW: append to epiphanies_recall_filter_shadow.jsonl, edge_weights UNTOUCHED.
+    APPLY: write w *= EPI_RECALL_FILTER_FACTOR back to edge_weights (the FIRST live subtract). Targeted
+    (only w >= EPI_RECALL_FILTER_MIN_W), idempotent-ish (re-running re-derives from the live veto each
+    fold; an already-low edge falls below MIN_W and is left alone), fail-soft — never raises into the
+    fold. Returns stats. NOTE: in SHADOW this function performs ZERO writes to any live store."""
+    try:
+        if not vetoed_keys:
+            return {"targets": 0, "applied": recall_filter_apply_enabled(memory_dir)}
+        from .hebbian import _load_edge_weights, _save_edge_weights
+        ew = _load_edge_weights(memory_dir)
+        apply = recall_filter_apply_enabled(memory_dir)
+
+        def _norm(k):
+            a, b = k.split("::", 1)
+            a = a if a.endswith(".md") else a + ".md"
+            b = b if b.endswith(".md") else b + ".md"
+            x, y = sorted([a, b])
+            return f"{x}::{y}"
+
+        recs = []
+        for k in sorted(vetoed_keys):
+            nk = _norm(k)
+            e = ew.get(nk)
+            if not isinstance(e, dict):
+                continue
+            w_old = float(e.get("w", 0.0))
+            if w_old < EPI_RECALL_FILTER_MIN_W:
+                continue
+            w_new = round(w_old * EPI_RECALL_FILTER_FACTOR, 6)
+            recs.append({"key": nk, "w_old": round(w_old, 6), "w_new": w_new})
+            if apply:
+                e["w"] = w_new
+                e["epiphanies_filtered"] = True      # provenance marker (auditable, reversible)
+        if apply and recs:
+            _save_edge_weights(memory_dir, ew)       # <-- the ONLY live write; APPLY-gated only
+        ts = _dt.datetime.now().isoformat(timespec="seconds")
+        with _recall_filter_shadow_log_path(memory_dir).open("a", encoding="utf-8") as f:
+            for r in recs:
+                f.write(json.dumps({"ts": ts, "occ": occ, "applied": apply, **r}) + "\n")
+        return {"targets": len(recs), "applied": apply}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 def _usefulness_ledger_path(memory_dir):
     return _bio_paths(memory_dir)["bio_dir"] / "epiphanies_usefulness_ledger.jsonl"
 
@@ -1225,6 +1300,15 @@ def consolidate(memory_dir, force: bool = False) -> dict:
             if usefulness_shadow_enabled(memory_dir):
                 usefulness_pass, usefulness_stats = _run_usefulness(
                     memory_dir, promotable_keys, out, sittings, occ)
+            # A' veto-as-recall-filter: the keys the veto REJECTED (= promotable minus the pass-set)
+            # are content-unrelated / mechanical-bundle edges; down-weight them in the live recall
+            # graph so the junk stops out-ranking genuine associations. SHADOW logs the would-be
+            # down-weights only (edge_weights UNTOUCHED); APPLY writes them (the first live SUBTRACT).
+            # Default OFF -> not called -> parity intact.
+            recall_filter_stats = {}
+            if recall_filter_shadow_enabled(memory_dir) and usefulness_pass is not None:
+                vetoed = set(promotable_keys) - set(usefulness_pass)
+                recall_filter_stats = _run_recall_filter(memory_dir, vetoed, occ)
             link_stats = {
                 "occ": occ, "minted": minted, "validated_now": validated, "decayed_now": decayed,
                 "evicted": evicted,
@@ -1235,6 +1319,7 @@ def consolidate(memory_dir, force: bool = False) -> dict:
                 "tracked": len(cands),
                 "shadow_web": shadow_web_stats,
                 "usefulness": usefulness_stats,
+                "recall_filter": recall_filter_stats,
             }
         except (Exception, SystemExit) as e:
             link_stats = {"error": str(e)}
