@@ -126,6 +126,69 @@ SCHEMA_MIN_AGE_DAYS = 7
 HEBB_MIN_INTERVAL_ENV = "ASTHENOS_HEBB_MIN_INTERVAL_S"
 
 # ---------------------------------------------------------------------------
+# FEAT-2026-06-18 Hebbian edge-quality — stop-node exclusion + significance gate
+# ---------------------------------------------------------------------------
+
+# HEBB_STOPNODE_PREFIXES — What: filename-prefix fragments for low-value,
+#   high-cardinality nodes that must NEVER form Hebbian co-activation edges.
+#   `session_*_offload` = the episodic session-offload dumps; `sem_` = the
+#   semantic session-event nodes (sem_youtube_video_accessed…). A node id is a
+#   STOP node when its (lowercased, .md-stripped) stem startswith any of these.
+# Why: the 2026-06-18 red-team found these saturate as degree-32 hubs whose 32
+#   neighbors are all other session-event nodes (the GAAMA mega-hub effect,
+#   arXiv:2603.27910) — the "everything-in-a-retrieval-window co-occurs" raw-
+#   co-occurrence pathology. They are already filtered from the entity-bridge
+#   and the active-set (contradiction.is_excluded_node) but NOT from
+#   hebbian_record, so they still pollute edge formation. Filtering them out
+#   BEFORE the O(n²) all-pairs is the cheapest, highest-precision win (P2).
+# AMENDMENT 2026-06-20 (sparseness heal, explosion-checked): `sem_` REMOVED from the default.
+#   The blanket sem_ exclusion FROZE the semantic-concept layer's Hebbian wiring (0 new sem_
+#   co-activations after 2026-06-18) — the dominant ongoing SPARSENESS cause (sem_ = ~70% of the
+#   store). Live evidence REFUTES the sem_ mega-hub fear: in the pre-filter genuine web, sem_ nodes
+#   wired at mean-degree 9.5 / max 39 / p95 20 / ZERO above 50 — LOWER than the NON-excluded `named`
+#   concept nodes (mean 17.8, max 62). The true degree-300-518 mega-hubs are `session_*_offload`
+#   dumps (KEPT excluded). The `_sel` degree penalty (balancing._sel) STRUCTURALLY self-limits any
+#   node: as degree grows, score -> 0 -> below EPI_MAT_FLOOR -> no new edge (this is why historical
+#   sem_ capped at 39, not 300). So `_sel` + EPI_MAT_FLOOR + the recall top-k cap (<=12 nodes ->
+#   <=66 pairs/recall) + w/S decay are the real, intact explosion guards — no edge/strength
+#   explosion from re-including sem_ (empirically bounded web = ~5.7k edges). REVERSIBLE: set
+#   ASTHENOS_HEBB_STOPNODE_PREFIXES="session_,sem_" to restore the old behavior instantly.
+HEBB_STOPNODE_PREFIXES = ("session_",)
+
+# HEBB_STOPNODE_PREFIXES_ENV — What: env override (comma-separated prefixes) for
+#   the stop-node prefix list, so the exclusion is tunable WITHOUT a code edit.
+# Why: operator-owned tuning (matches the HEBB_MIN_INTERVAL_ENV / contradiction
+#   ASTHENOS_CONTRADICTION_EXCLUDE_TYPES pattern). Unset -> the default tuple
+#   above; set -> replaces it wholesale (read live so a daemon that sets the env
+#   after import sees the change). `session_` is matched with the extra
+#   "offload"-substring guard in hebbian.py so a non-offload session_* node is
+#   not over-excluded; bare prefixes here are matched as plain startswith.
+HEBB_STOPNODE_PREFIXES_ENV = "ASTHENOS_HEBB_STOPNODE_PREFIXES"
+
+# HEBB_LIFT_GATE_ENABLED_ENV / HEBB_LIFT_MIN_ENV — What: the env flag (default
+#   OFF) + threshold for the Phase-2 significance (lift/PMI) gate. lift =
+#   C(ij)·N / (C(i)·C(j)); form/weight an edge only when lift > HEBB_LIFT_MIN.
+# Why: P1/P4 — raw co-occurrence has NO significance gating, so high-frequency
+#   spurious pairs persist while genuine low-frequency pairs decay out (a
+#   selection-pressure inversion). lift>2.0 is the standard min-significance cut
+#   (Church&Hanks'90, Agrawal&Srikant'94, Levy&Goldberg'14). DEFAULT OFF: the
+#   marginal-count store is populated on every consolidation so the gate has data
+#   to act on the moment the operator flips the flag, but live edge formation is
+#   UNCHANGED until then (ship the substrate, gate the behavior).
+HEBB_LIFT_GATE_ENABLED_ENV = "ASTHENOS_HEBB_LIFT_GATE"
+HEBB_LIFT_MIN_ENV = "ASTHENOS_HEBB_LIFT_MIN"
+HEBB_LIFT_MIN_DEFAULT = 2.0
+
+# HEBB_SATURATE_ENABLED_ENV — What: env flag (default OFF) for the Phase-3
+#   saturating weight update (per-node L2 synaptic scaling, Turrigiano'98).
+# Why: P3 — the plain EMA toward 1.0 lets busy nodes' edges all saturate near 1;
+#   per-node normalization bounds total outgoing weight so weights converge below
+#   1 and compete instead of all maxing out. DEFAULT OFF — it touches the live
+#   consolidation weight path, so it ships behind a flag for A/B on edge precision.
+HEBB_SATURATE_ENABLED_ENV = "ASTHENOS_HEBB_SATURATE"
+HEBB_SATURATE_TARGET_DEFAULT = 4.0  # per-node total-outgoing-weight budget (L2-ish cap)
+
+# ---------------------------------------------------------------------------
 # FEAT-2026-06-07 P3b — the ONLINE active-set (bounded supersession locus)
 # ---------------------------------------------------------------------------
 
@@ -241,6 +304,14 @@ def _bio_paths(memory_dir: Path) -> dict:
         #   locally by successor.py and row-normalized on the fly into T_dir; written
         #   under locked_update_json (incremented, never rebuilt). Bounded ≤ 2·|edges|.
         "episode_transitions": bio_dir / "episode_transitions.json",
+        # marginal_counts — What: per-node co-activation MARGINAL counts C(i) plus
+        #   the grand total N of co-activation EVENTS (FEAT-2026-06-18 Phase-2). Sibling
+        #   of edge_weights.json. Shape: {"N": int, "counts": {node_id: int}}.
+        # Why: the significance (lift/PMI) gate needs C(i)/C(j)/N to compute
+        #   lift = C(ij)·N/(C(i)·C(j)). Populated on EVERY consolidation so the gate
+        #   has data the moment the operator flips ASTHENOS_HEBB_LIFT_GATE on; the
+        #   gate itself is default-OFF until then (substrate shipped, behavior gated).
+        "marginal_counts": bio_dir / "coactivation_marginals.json",
     }
 
 
@@ -270,5 +341,7 @@ def _bio_paths(memory_dir: Path) -> dict:
 #             HEBB_MIN_INTERVAL_ENV, ACTIVE_SET_HOT_N, SALIENCE_*, KWTA_* (public);
 #             _dt, _time, _chain, _KWTA_PROJ_CACHE, _bio_paths (single-owned, imported
 #             through config by the sibling arms).
-# Lines:      271
+# Lines:      276
+# Updated:    2026-06-14
+# Status:     active
 # --------------------------------------------------------------------------

@@ -158,6 +158,13 @@ from .config import (  # noqa: F401
     SCHEMA_MIN_NODES,
     SCHEMA_MIN_AGE_DAYS,
     HEBB_MIN_INTERVAL_ENV,
+    HEBB_STOPNODE_PREFIXES,
+    HEBB_STOPNODE_PREFIXES_ENV,
+    HEBB_LIFT_GATE_ENABLED_ENV,
+    HEBB_LIFT_MIN_ENV,
+    HEBB_LIFT_MIN_DEFAULT,
+    HEBB_SATURATE_ENABLED_ENV,
+    HEBB_SATURATE_TARGET_DEFAULT,
     ACTIVE_SET_HOT_N,
     SALIENCE_W_SURPRISE,
     SALIENCE_W_CONTRADICTION,
@@ -198,6 +205,17 @@ from .hebbian import (  # noqa: F401
     _apply_coactivation,
     _decay_and_prune,
     _is_promotable,
+    # FEAT-2026-06-18 — stop-node exclusion (P2) + significance/lift helpers (P2/Phase-2)
+    _stopnode_prefixes,
+    _is_stopnode,
+    _filter_stopnodes,
+    _load_marginal_counts,
+    _save_marginal_counts,
+    _lift,
+    _lift_gate_enabled,
+    # FEAT-2026-06-18 P3 — per-node synaptic scaling (flag-gated, default OFF)
+    _saturation_enabled,
+    _apply_synaptic_scaling,
 )
 
 # Reconsolidation (recall-is-a-write).
@@ -292,5 +310,7 @@ __all__ = [
 #             caller). No importlib.reload(bio) exists in the suite, so NO reload-cascade
 #             shim is needed (unlike the contradiction exemplar's env-derived constants).
 # restart:    bio changes require restarting samia.runtime.daemon (PID ~3167).
-# Lines:      277
+# Lines:      298
+# Updated:    2026-06-14
+# Status:     active
 # --------------------------------------------------------------------------

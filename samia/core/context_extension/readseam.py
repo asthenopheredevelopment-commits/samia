@@ -1,40 +1,41 @@
-"""samia.core.context_extension.readseam — the failure/diagnosis read-seam.
+"""samia.core.context_extension.readseam — cross-chain failure/diagnosis read-seam.
 
 Layer 1 (Owns / Depends):
-    Owns:    the cross-chain failure-experience query the chainogram surfaces when
-             include_failure_associations=True — the three-tier top-N resolver
-             (_resolve_read_seam_top_n), the failure/diagnosis frontmatter classifier
-             (_is_failure_or_diagnosis_node), and the edges.db coactivation + direct-
-             match query (_query_failure_associations).
-    Depends: the package config leaf (the read-seam top-N default + env, the _dt date
-             stamp, os/sqlite3, the _nodes_dir helper + _read_fm reader, and the
-             web_store alias _ws for the edge schema constants + decay math).
+    Owns:    the read side of the failure-experience storm — _resolve_read_seam_top_n
+             (the call-site > env > constant top-N override), _is_failure_or_diagnosis_node
+             (the frontmatter classifier for failure-outcome + bug-diagnosis nodes), and
+             _query_failure_associations (the edges.db coactivation-neighbor + direct-match
+             query that surfaces accumulated failure experience during diagnosis).
+    Depends: .config (the READ_SEAM_TOP_N_DEFAULT / READ_SEAM_TOP_N_ENV constants, the
+             aliased _ws web_store for the edges.db path + decay constants, _dt for
+             today's date, and the shared _nodes_dir / _read_fm helpers); stdlib os /
+             sqlite3.
 
 Layer 2 (What / Why):
-    What: during diagnosis, callers can ask the chainogram to surface accumulated
-          failure experience from the Hebbian coactivation web — prior bounty failures
-          and bug diagnoses that are either directly retrieved (weight 1.0) OR
-          cross-chain neighbors of the loaded nodes — ranked by weight × recency.
-    Why:  this is the READ side of the failure-experience storm. Isolating it from the
-          retrieval arm keeps chainogram_retrieve's core packing loop readable; the
-          arm just calls _query_failure_associations and merges the additive-only key.
+    What: given the nodes a retrieval just loaded, surface the failure/diagnosis nodes
+          that ARE among them (direct matches, weight 1.0) PLUS their cross-chain
+          coactivation neighbors from the Hebbian web, deduped + recency-decayed +
+          ranked, top-N.
+    Why:  closes the read side of the failure storm — during diagnosis the caller sees
+          prior failures Hebbian-associated with the loaded context. The retrieval arm
+          calls _query_failure_associations through the additive
+          include_failure_associations key; mcp_server references it; both reach it
+          through the package facade.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
+import os
+import sqlite3
 
-# Shared leaf — the read-seam top-N default + env, the _dt date stamp, os/sqlite3, the
-# node dir + frontmatter reader, and the web_store alias for the edge schema + decay.
+# Single-owned constants + aliased deps + shared helpers, reached THROUGH the config leaf.
 from .config import (
     READ_SEAM_TOP_N_DEFAULT,
     READ_SEAM_TOP_N_ENV,
     _dt,
-    os,
-    sqlite3,
-    _ws,
     _nodes_dir,
     _read_fm,
+    _ws,
 )
 
 
@@ -73,8 +74,12 @@ def _is_failure_or_diagnosis_node(fm: dict) -> bool:
     if node_type == "bug":
         status = (fm.get("status") or "").strip().lower()
         return status != "wont-fix"
-    # Outcome node path: type=reference + frozen target_state (failure/partial)
+    # Outcome node path: type=reference + frozen target_state (failure/partial). A test-verified
+    # SUCCESS (FEAT-2026-06-20 Fix A) is explicitly EXCLUDED — it is a positive outcome, not a
+    # failure — guarding against any chain-name substring overlap with 'verified_outcomes'.
     if node_type == "reference":
+        if (fm.get("outcome_polarity") or "").strip().lower() == "success":
+            return False
         target_state = (fm.get("target_state") or "").strip().lower()
         chains_raw = (fm.get("chains") or "").strip()
         has_bounty = "bounty_outcomes" in chains_raw
@@ -83,8 +88,20 @@ def _is_failure_or_diagnosis_node(fm: dict) -> bool:
     return False
 
 
+def _is_test_verified_success(fm: dict) -> bool:
+    """FEAT-2026-06-20 Fix A: a TEST-EXECUTION-attested SUCCESS outcome node — the un-gameable
+    positive 'helped do work' signal the outcome-reward AUTO channel credits. Distinct from the
+    failure path: keyed on verified_by + outcome_polarity (set by opencode_drain.materialize_node),
+    frozen so it persists/joins. Chain-name independent (robust to the substring collision)."""
+    if (fm.get("type") or "").strip().lower() != "reference":
+        return False
+    return ((fm.get("verified_by") or "").strip().lower() == "test_execution"
+            and (fm.get("outcome_polarity") or "").strip().lower() == "success"
+            and (fm.get("target_state") or "").strip().lower() == "frozen")
+
+
 def _query_failure_associations(
-    memory_dir: Path,
+    memory_dir,
     loaded_nodes: list[str],
     top_n: int,
     db_dir: str | None = None,
@@ -121,6 +138,9 @@ def _query_failure_associations(
     #   canonical (_order) form — a loaded node could be on either side.
     #   If edges.db is missing or unreadable, skip neighbor collection
     #   (direct matches may still contribute).
+    # NeighborScan — What: open edges.db read-only and, per loaded node, union its
+    #     COACTIVATION edges in BOTH directions (src->dst and dst->src), dropping any
+    #     neighbor that is itself a loaded node.
     neighbor_rows: list[tuple[str, float, str]] = []
     if os.path.exists(db_path):
         try:
@@ -146,6 +166,8 @@ def _query_failure_associations(
                             neighbor_rows.append(row)
             finally:
                 conn.close()
+    # NeighborScan — Why: edges are stored in canonical _order form, so a loaded node can
+    #     sit on either side; the read-only handle + a missing-db skip keep the seam non-fatal.
 
     # What: collect loaded_nodes that ARE failure/diagnosis nodes (direct matches).
     # Why: the neighbor loop above EXCLUDES loaded_nodes by design (line 220/227),
@@ -208,7 +230,8 @@ def _query_failure_associations(
         if not _is_failure_or_diagnosis_node(fm):
             continue
 
-        # Compute recency-adjusted score
+        # Rank — What: score each surviving failure node as weight × linear recency-decay
+        #     (days since last_seen), then sort descending and keep the top-N.
         days = _ws._days_since(last_seen, today)
         recency_decay = max(0.0, 1.0 - _ws.EDGE_DECAY_PER_DAY * days)
         effective_score = weight * recency_decay
@@ -217,6 +240,8 @@ def _query_failure_associations(
     # What: sort descending by effective score, take top N.
     scored.sort(key=lambda t: -t[0])
     scored = scored[:top_n]
+    # Rank — Why: a stale failure association is less actionable than a fresh one, so recency
+    #     sinks it below recent mistakes; the top-N bound caps what the diagnosis caller sees.
 
     results: list[dict] = []
     for eff_score, neighbor, weight, last_seen, provenance in scored:
@@ -254,18 +279,22 @@ def _query_failure_associations(
 # Author:     code_warrior
 # Project:    Asthenosphere — SAM/IA
 # Version:    1.0.0
-# Phase:      read-seam (cross-chain failure/diagnosis association query) — the READ
-#             side of the failure-experience storm.
-#             + Phase-B modularization (carved from the monolith, ZERO behavior change).
+# Phase:      Phase-B modularization — the cross-chain failure/diagnosis read-seam
+#             carved from the monolith with ZERO behavior change.
 # Layer:      core (pure library, no daemon dependency)
-# Role:       failure/diagnosis association query surfaced by chainogram_retrieve when
-#             include_failure_associations=True.
-# Stability:  stable — additive-only output key; existing callers ignore it via .get().
+# Role:       the read side of the failure-experience storm — direct-match + cross-chain
+#             coactivation-neighbor failure surfacing during diagnosis.
+# Stability:  stable — additive-only; the retrieval arm consults it through the optional
+#             include_failure_associations key, so existing callers are unaffected.
 # ErrorModel: fail-soft — a missing/unreadable edges.db skips neighbor collection (direct
 #             matches still contribute); per-node frontmatter read errors are swallowed.
-# Depends:    .config (the top-N default/env, _dt, os/sqlite3, _nodes_dir, _read_fm, _ws).
-# Exposes:    _query_failure_associations (the entrypoint) + _resolve_read_seam_top_n +
-#             _is_failure_or_diagnosis_node (re-exported on the facade for parity; the
-#             read-seam scout generalizes _query_failure_associations in mcp_server).
-# Lines:      266
+# Depends:    .config (READ_SEAM_TOP_N_* constants, _dt, _ws, _nodes_dir, _read_fm);
+#             stdlib os / sqlite3.
+# Exposes:    _resolve_read_seam_top_n / _is_failure_or_diagnosis_node /
+#             _query_failure_associations (all private; re-exported on the facade — the
+#             read-seam tests reach _is_failure_or_diagnosis_node + _resolve_read_seam_top_n
+#             through it, and mcp_server references _query_failure_associations).
+# Lines:      276
+# Updated:    2026-06-14
+# Status:     active
 # --------------------------------------------------------------------------

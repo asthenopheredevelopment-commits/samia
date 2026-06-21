@@ -94,6 +94,8 @@ def _salience_surprise(memory_dir, content: str,
         emb = np.load(ip)
         if emb.shape[0] == 0:
             return 0.0
+        # LeaveOneOut — What: when exclude_node is set, delete its embedding row from the
+        #     index matrix so the node cannot self-match to cos≈1 before max_cosine.
         # P2 leave-one-out: drop the node's own row so it cannot self-match to cos≈1.
         # Fail-soft — a missing manifest/row/tombstone just leaves emb intact (legacy).
         if exclude_node is not None:
@@ -108,6 +110,8 @@ def _salience_surprise(memory_dir, content: str,
                 pass  # excluding nothing falls back to the legacy self-matched value
             if emb.shape[0] == 0:
                 return 0.0  # the corpus was just this one node -> no comparison signal
+        # LeaveOneOut — Why: surprise is RELATIVE to the rest of the corpus; an already-
+        #     indexed node would otherwise self-match (cos≈1) and score ~0, hiding real novelty.
         q = _vi._embed_batch([content])[0]
         sims = emb @ q
         max_cos = float(np.max(sims))
@@ -223,6 +227,8 @@ def compute_salience(memory_dir, node: str,
     contradiction = _salience_contradiction(memory_dir, node)
     repetition = _salience_repetition(memory_dir, node, fm)
 
+    # Aggregate — What: weight the three composite signals into a clamped [0,1] score,
+    #     then let an explicit operator/agent tag clamp it HIGH regardless of the composite.
     composite = (SALIENCE_W_SURPRISE * surprise
                  + SALIENCE_W_CONTRADICTION * contradiction
                  + SALIENCE_W_REPETITION * repetition)
@@ -235,6 +241,8 @@ def compute_salience(memory_dir, node: str,
         tagged = bool(fm.get("salience_tag", False))
     salience = max(composite, SALIENCE_TAG_VALUE) if tagged else composite
     salience = float(round(min(1.0, max(0.0, salience)), 4))
+    # Aggregate — Why: salience must not be reducible to any single signal, and the human
+    #     "this matters" tag has to win over a low composite — so the tag is a floor, not a term.
 
     if write and fm_bundle is not None:
         fm, order, body = fm_bundle
@@ -305,8 +313,7 @@ def salience_merge_guard(memory_dir, node: str,
 # Author:     code_warrior
 # Project:    Asthenosphere — SAM/IA
 # Version:    1.0.0
-# Phase:      Phase B (2026-06-14): carved from the samia.bio monolith during
-#             modularization.
+# Phase:      Phase B (2026-06-14): the salience SOURCE arm carved from the samia.bio monolith
 # Layer:      core (pure library, no daemon dependency)
 # Role:       the salience SOURCE arm — the shared frontmatter reader, the three
 #             composite signals (surprise / contradiction-involvement / saturating
@@ -324,8 +331,10 @@ def salience_merge_guard(memory_dir, node: str,
 # Exposes:    compute_salience, salience_merge_guard (public); _node_frontmatter,
 #             _salience_surprise, _salience_contradiction, _salience_repetition
 #             (private, re-exported for tests/importers/parity).
-# Lines:      328
 # Note:       compute_salience is itself a mock.patch.object(bio, ...) target (integrity
 #             tests rebind it) but has NO internal caller in bio — re-export alone
 #             suffices; no facade-reach seam is needed for it.
+# Lines:      332
+# Updated:    2026-06-14
+# Status:     active
 # --------------------------------------------------------------------------

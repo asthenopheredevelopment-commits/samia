@@ -163,6 +163,11 @@ from .bio_tools import (  # noqa: F401
     memory_merge_candidates,
     memory_confirm_merge,
     memory_reject_merge,
+    memory_epiphanies_reject_binding,
+    memory_epiphanies_unreject_binding,
+    memory_epiphanies_reject_candidate,
+    memory_epiphanies_list_suppressions,
+    memory_epiphanies_list_candidates,
 )
 
 # The context-extension tools + the index/REM status reads.
@@ -202,7 +207,11 @@ __all__ = [
     "memory_forget_node", "memory_supersession_candidates",
     "memory_confirm_supersession", "memory_dismiss_supersession",
     "memory_restore_node", "memory_merge_candidates", "memory_confirm_merge",
-    "memory_reject_merge", "memory_chainogram_retrieve", "memory_frozen_prefix",
+    "memory_reject_merge",
+    "memory_epiphanies_reject_binding", "memory_epiphanies_unreject_binding",
+    "memory_epiphanies_reject_candidate", "memory_epiphanies_list_suppressions",
+    "memory_epiphanies_list_candidates",
+    "memory_chainogram_retrieve", "memory_frozen_prefix",
     "memory_tier_flow_for_budget", "memory_episodic_candidates", "memory_idle_tick",
     "memory_sm2_update", "memory_sm2_due", "memory_compaction_skip_filter",
     "memory_index_status", "memory_rem_status", "memory_rem_sleep_now",

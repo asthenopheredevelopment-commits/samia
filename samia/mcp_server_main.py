@@ -321,6 +321,46 @@ def memory_chain_maturity(chain: str) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Epiphanies associative-edge veto net — operator correction surface. LEDGER-only,
+# fail-open; the lever to veto a false association before/after it promotes to a chain.
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def memory_epiphanies_reject_binding(node_a: str, node_b: str, reason: str = "") -> dict[str, Any]:
+    """Mark an Epiphanies associative binding (node_a, node_b) a FALSE association. Suppresses it
+    from the next consolidate (demoted, never promoted to a chain) UNLESS it keeps recurring (a
+    K-recurrence override un-suppresses it). LEDGER-only — no live edge written, no node forgotten."""
+    return _mcps.memory_epiphanies_reject_binding(MEMORY_DIR, node_a, node_b, reason)
+
+
+@mcp.tool()
+def memory_epiphanies_unreject_binding(node_a: str, node_b: str) -> dict[str, Any]:
+    """Clear an Epiphanies binding suppression (operator changed their mind). Returns {cleared: bool}."""
+    return _mcps.memory_epiphanies_unreject_binding(MEMORY_DIR, node_a, node_b)
+
+
+@mcp.tool()
+def memory_epiphanies_reject_candidate(node_a: str, node_b: str) -> dict[str, Any]:
+    """Veto a linker CANDIDATE (proposed-but-unvalidated association) as not-related. A K-remint
+    override can still resurface it if it keeps genuinely co-occurring."""
+    return _mcps.memory_epiphanies_reject_candidate(MEMORY_DIR, node_a, node_b)
+
+
+@mcp.tool()
+def memory_epiphanies_list_suppressions() -> dict[str, Any]:
+    """List the active Epiphanies binding suppressions (operator visibility)."""
+    return _mcps.memory_epiphanies_list_suppressions(MEMORY_DIR)
+
+
+@mcp.tool()
+def memory_epiphanies_list_candidates(state: str = "") -> dict[str, Any]:
+    """List the linker's association candidates (optional state filter, e.g. 'validated'/'genuine').
+    Operator visibility into the hypotheses; mutates nothing."""
+    return _mcps.memory_epiphanies_list_candidates(MEMORY_DIR, state)
+
+
+# ---------------------------------------------------------------------------
 # Forgetting / negative consolidation -- FEAT-2026-06-07 P0
 # ---------------------------------------------------------------------------
 

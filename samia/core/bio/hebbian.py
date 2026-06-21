@@ -52,20 +52,89 @@ from .config import (
     HEBB_REPLAY_COACT_WEIGHT,
     REPLAY_ONLY_W_CEILING,
     HEBB_MIN_INTERVAL_ENV,
+    HEBB_STOPNODE_PREFIXES,
+    HEBB_STOPNODE_PREFIXES_ENV,
+    HEBB_LIFT_GATE_ENABLED_ENV,
+    HEBB_LIFT_MIN_ENV,
+    HEBB_LIFT_MIN_DEFAULT,
+    HEBB_SATURATE_ENABLED_ENV,
+    HEBB_SATURATE_TARGET_DEFAULT,
     _bio_paths,
 )
 
 
+def _stopnode_prefixes() -> tuple[str, ...]:
+    """FEAT-2026-06-18 P2 — the live stop-node prefix list (env-overridable).
+
+    What: read HEBB_STOPNODE_PREFIXES_ENV (comma-separated) if set, else the
+      HEBB_STOPNODE_PREFIXES default. Lowercased, blanks dropped, read EACH call
+      so a daemon that sets the env after import sees the change.
+    Why: single source for the stop-node test, tunable WITHOUT a code edit
+      (mirrors HEBB_MIN_INTERVAL_ENV / the contradiction exclude-types env).
+    """
+    raw = os.environ.get(HEBB_STOPNODE_PREFIXES_ENV, "")
+    if raw.strip():
+        return tuple(p.strip().lower() for p in raw.split(",") if p.strip())
+    return tuple(p.lower() for p in HEBB_STOPNODE_PREFIXES)
+
+
+def _is_stopnode(node_id: str) -> bool:
+    """FEAT-2026-06-18 P2 — True iff `node_id` is a low-value high-cardinality
+    stop node that must NOT form Hebbian co-activation edges.
+
+    What: lowercase + strip the .md suffix, then match the live prefix list.
+      `session_` carries an extra "offload"-substring guard so only the episodic
+      session-offload dumps (`session_*_offload`) are excluded — a non-offload
+      session_* node is NOT over-excluded. Every other prefix (e.g. `sem_`) is a
+      plain startswith.
+    Why: mirrors contradiction.is_excluded_node's filename-by-name handling of the
+      same session-offload episodic class. Pure (no IO) so it is cheap to call in
+      the hot recall path before the all-pairs.
+    """
+    stem = node_id[:-3] if node_id.endswith(".md") else node_id
+    low = stem.lower()
+    for pfx in _stopnode_prefixes():
+        if not low.startswith(pfx):
+            continue
+        # session_* is only a stop node when it is an OFFLOAD dump; bare session_
+        # ids that are not offloads remain eligible to co-activate.
+        if pfx == "session_" and "offload" not in low:
+            continue
+        return True
+    return False
+
+
+def _filter_stopnodes(nodes: list[str]) -> list[str]:
+    """FEAT-2026-06-18 P2 — drop stop nodes (order-preserving) before the all-pairs."""
+    return [n for n in nodes if not _is_stopnode(n)]
+
+
 def hebbian_record(memory_dir: Path, retrieved_nodes: list[str],
                    query: Optional[str] = None,
-                   source: str = "genuine") -> None:
+                   source: str = "genuine",
+                   issue_id: Optional[str] = None) -> None:
     """Log one co-activation event.
 
     source: "genuine" (real recalled-together event — full weight, refreshes the
       decay clock) or "replay" (replay-discovered pair — fractional weight,
       decay-transparent; see hebbian_consolidate / D1). Default "genuine" so the
       existing memory_search call site (and its CLI wrapper) is unchanged.
+
+    FEAT-2026-06-18 P2 (stop-node exclusion): low-value high-cardinality nodes
+      (`session_*_offload` episodic dumps + `sem_*` session-event nodes) are
+      filtered out BEFORE anything is logged, so they never form co-activation
+      edges (the red-team's degree-32 mega-hub pathology). This mirrors the
+      entity-bridge + active-set (contradiction.is_excluded_node) filters already
+      present elsewhere. If <2 nodes remain after filtering, we record nothing.
     """
+    if len(retrieved_nodes) < 2:
+        return
+    # STOP-NODE EXCLUSION (P2) — filter BEFORE the early-return re-check + the
+    # downstream all-pairs fold. Done here (the single recall hook) so neither the
+    # SITH jump-back nor the epiphanies archive nor the consolidation all-pairs
+    # ever sees a stop node, and the live coactivation_log.jsonl stays clean at the
+    # source. If fewer than 2 genuine nodes survive, there is no pair to record.
+    retrieved_nodes = _filter_stopnodes(list(retrieved_nodes))
     if len(retrieved_nodes) < 2:
         return
     paths = _bio_paths(memory_dir)
@@ -95,6 +164,81 @@ def hebbian_record(memory_dir: Path, retrieved_nodes: list[str],
     except Exception:
         pass
 
+    # Epiphanies v3 (FLAG-GATED, default OFF; FEAT-2026-06-16-memory-episodic-associative-
+    # binding). Archive this co-activation durably so SITTINGS can be reconstructed offline —
+    # the live hebb_log above is DRAINED at consolidation, so it cannot serve as the sitting
+    # source. archive_event no-ops fast + fail-soft when ASTHENOS_EPI_ENABLED is unset, so the
+    # recall hot path is byte-for-byte unchanged in the default (off) configuration.
+    try:
+        from samia.core.bio import epiphanies as _epi
+        _epi.archive_event(memory_dir, list(retrieved_nodes), query, source, issue_id=issue_id)
+    except Exception:
+        pass
+
+
+def _load_marginal_counts(memory_dir: Path) -> dict:
+    """FEAT-2026-06-18 Phase-2 — load the per-node co-activation marginal store.
+
+    Shape: {"N": int (grand total co-activation events), "counts": {node_id: C(i)}}.
+    Returns the zero store on a missing/corrupt file (fail-soft, like _load_edge_weights).
+    """
+    fp = _bio_paths(memory_dir)["marginal_counts"]
+    if fp.exists():
+        try:
+            d = json.loads(fp.read_text(encoding="utf-8"))
+            if isinstance(d, dict):
+                d.setdefault("N", 0)
+                d.setdefault("counts", {})
+                return d
+        except Exception:
+            pass
+    return {"N": 0, "counts": {}}
+
+
+def _save_marginal_counts(memory_dir: Path, d: dict) -> None:
+    """FEAT-2026-06-18 Phase-2 — persist the marginal-count store (atomic replace)."""
+    paths = _bio_paths(memory_dir)
+    paths["bio_dir"].mkdir(parents=True, exist_ok=True)
+    fp = paths["marginal_counts"]
+    tmp = fp.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(d, indent=2), encoding="utf-8")
+    os.replace(tmp, fp)
+
+
+def _lift(c_ij: float, c_i: float, c_j: float, n: float) -> float:
+    """FEAT-2026-06-18 Phase-2 — association lift = C(ij)·N / (C(i)·C(j)) (= exp PMI).
+
+    What: the marginal-frequency-corrected co-occurrence significance. lift>1 means
+      the pair co-activates MORE than chance given each node's own popularity; lift>2
+      is the standard min-significance cut (Church&Hanks'90, Agrawal&Srikant'94).
+    Why: raw co-occurrence rewards popular nodes (a busy hub co-occurs with everything
+      by chance); dividing by the marginals C(i)·C(j) removes that confound so genuine
+      low-frequency associations are not out-competed by frequent spurious ones.
+    Returns 0.0 on a degenerate denominator (an unseen/zero-marginal node) so the gate
+    treats no-evidence as not-significant rather than crashing.
+    """
+    denom = c_i * c_j
+    if denom <= 0 or n <= 0:
+        return 0.0
+    return (c_ij * n) / denom
+
+
+def _lift_gate_enabled() -> bool:
+    """FEAT-2026-06-18 Phase-2 — True iff the significance gate is flag-ON (default OFF).
+
+    Reads ASTHENOS_HEBB_LIFT_GATE live each call; truthy values: 1/true/yes/on.
+    """
+    raw = os.environ.get(HEBB_LIFT_GATE_ENABLED_ENV, "").strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
+def _lift_min() -> float:
+    """FEAT-2026-06-18 Phase-2 — the live lift threshold (env-overridable, default 2.0)."""
+    try:
+        return float(os.environ.get(HEBB_LIFT_MIN_ENV, "") or HEBB_LIFT_MIN_DEFAULT)
+    except (TypeError, ValueError):
+        return HEBB_LIFT_MIN_DEFAULT
+
 
 def _load_edge_weights(memory_dir: Path) -> dict:
     fp = _bio_paths(memory_dir)["edge_weights"]
@@ -107,6 +251,14 @@ def _load_edge_weights(memory_dir: Path) -> dict:
 
 
 def _save_edge_weights(memory_dir: Path, d: dict) -> None:
+    """Persist the RECALL-graph co-activation edge weights to edge_weights.json.
+
+    NOTE: these are RECALL-graph co-activation EDGE weights (edges.db / edge_weights.json) — a
+    purely retrieval-side association graph. T2/T3 nodes are admitted as recall-able READ-ONLY
+    knowledge by design, so they legitimately participate in the co-activation graph; writing a
+    T2/T3 edge weight here only affects retrieval ranking and never crosses into any model-training
+    path (a training-curriculum boundary, enforced elsewhere, owns that separation).
+    """
     paths = _bio_paths(memory_dir)
     paths["bio_dir"].mkdir(parents=True, exist_ok=True)
     paths["edge_weights"].write_text(json.dumps(d, indent=2), encoding="utf-8")
@@ -266,7 +418,8 @@ def _atomic_drain_log(paths: dict) -> Optional[Path]:
 
 def _apply_coactivation(weights: dict, nodes: list[str], source: str,
                         today: "_dt.date",
-                        node_appearances: Optional[dict] = None) -> set:
+                        node_appearances: Optional[dict] = None,
+                        marginals: Optional[dict] = None) -> set:
     """Fold ONE co-activation record into the edge-weight dict in place (pure, no IO).
 
     Source-aware homeostatic update (D1):
@@ -278,13 +431,32 @@ def _apply_coactivation(weights: dict, nodes: list[str], source: str,
         REPLAY_ONLY_W_CEILING (< HEBB_PROMOTION), so neither a replay-only edge nor a
         once-seeded edge can be farmed past the bar by replay — even over many days. The
         cap lifts only once the genuine bar (HEBB_PROMOTE_REPEATS) is met.
+
+    FEAT-2026-06-18 Phase-2 — marginals + significance (lift) gate:
+      - `marginals` (when given): {"N": int, "counts": {node: C(i)}} is updated IN PLACE
+        — N += 1 per record, C(i) += 1 per participating node — so the lift gate always
+        has up-to-date marginal-frequency evidence. This tracking runs UNCONDITIONALLY
+        (data is cheap and the operator needs it the instant the flag flips).
+      - The lift GATE (default OFF; ASTHENOS_HEBB_LIFT_GATE) suppresses the EMA strengthen
+        for a pair whose lift = C(ij)·N/(C(i)·C(j)) <= HEBB_LIFT_MIN: per-pair counts and
+        the touched-set still update (so an edge can EARN significance over time), but its
+        weight is held until the pair is statistically meaningful. With the flag OFF (the
+        default) behavior is byte-for-byte the pre-Phase-2 EMA update.
     Returns the set of edge keys touched.
     """
     src_w = HEBB_REPLAY_COACT_WEIGHT if source == "replay" else 1.0
     touched: set = set()
+    gate_on = marginals is not None and _lift_gate_enabled()
+    lift_min = _lift_min() if gate_on else 0.0
     if node_appearances is not None:
         for n in nodes:
             node_appearances[n] = node_appearances.get(n, 0) + 1
+    # Marginal tracking (Phase-2): one EVENT (N) + one participation per node C(i).
+    if marginals is not None:
+        marginals["N"] = int(marginals.get("N", 0)) + 1
+        mc = marginals.setdefault("counts", {})
+        for n in nodes:
+            mc[n] = int(mc.get(n, 0)) + 1
     for i in range(len(nodes)):
         for j in range(i + 1, len(nodes)):
             a, b = sorted([nodes[i], nodes[j]])
@@ -292,8 +464,20 @@ def _apply_coactivation(weights: dict, nodes: list[str], source: str,
             cur = weights.get(key, {"w": 0.0, "count": 0, "count_genuine": 0,
                                     "count_replay": 0,
                                     "last_seen": today.isoformat()})
-            cur["w"] = cur["w"] + src_w * HEBB_EMA_ALPHA * (1.0 - cur["w"])
             cur["count"] = cur.get("count", 0) + 1
+            # SIGNIFICANCE GATE (Phase-2, default OFF) — compute lift from the
+            # post-increment marginals; below threshold, hold the weight (do not
+            # strengthen) but keep counting so the pair can earn significance. With
+            # the gate off, strengthen is unconditional (legacy behavior).
+            strengthen = True
+            if gate_on:
+                mc = marginals.get("counts", {})
+                lift = _lift(cur["count"], mc.get(a, 0), mc.get(b, 0),
+                             marginals.get("N", 0))
+                cur["lift"] = round(lift, 4)
+                strengthen = lift > lift_min
+            if strengthen:
+                cur["w"] = cur["w"] + src_w * HEBB_EMA_ALPHA * (1.0 - cur["w"])
             if source == "replay":
                 cur["count_replay"] = cur.get("count_replay", 0) + 1
                 # decay-transparency: do NOT refresh last_seen; cap the weight at
@@ -309,6 +493,64 @@ def _apply_coactivation(weights: dict, nodes: list[str], source: str,
             weights[key] = cur
             touched.add(key)
     return touched
+
+
+def _saturation_enabled() -> bool:
+    """FEAT-2026-06-18 P3 — True iff per-node synaptic scaling is flag-ON (default OFF)."""
+    return os.environ.get(HEBB_SATURATE_ENABLED_ENV, "").strip().lower() in (
+        "1", "true", "yes", "on")
+
+
+def _saturation_target() -> float:
+    """FEAT-2026-06-18 P3 — the per-node total-outgoing-weight budget (env-overridable)."""
+    try:
+        raw = os.environ.get(HEBB_SATURATE_ENABLED_ENV + "_TARGET", "")
+        return float(raw) if raw.strip() else HEBB_SATURATE_TARGET_DEFAULT
+    except (TypeError, ValueError):
+        return HEBB_SATURATE_TARGET_DEFAULT
+
+
+def _apply_synaptic_scaling(weights: dict) -> int:
+    """FEAT-2026-06-18 P3 (FLAG-GATED default OFF) — per-node synaptic scaling.
+
+    What: Turrigiano'98 homeostatic synaptic scaling. For each node whose TOTAL
+      incident edge weight exceeds the budget T (_saturation_target), multiply all
+      its edges by T / total so its outgoing strength is bounded — busy nodes'
+      edges then COMPETE (a new strong edge costs the others) instead of every edge
+      independently saturating toward 1. Applied multiplicatively in two passes so
+      a shared edge sees the min scale of its two endpoints (never scaled above 1).
+    Why: the plain EMA toward 1.0 has no per-node budget, so a hub's 32 edges all
+      converge near 1 and the weight stops discriminating. A normalized budget keeps
+      weights below saturation and below 1, restoring weight as a ranking signal.
+    Returns the number of edges scaled. NO-OP (returns 0) unless the flag is on.
+    """
+    if not _saturation_enabled():
+        return 0
+    target = _saturation_target()
+    if target <= 0:
+        return 0
+    incident: dict[str, float] = {}
+    for k, v in weights.items():
+        if "::" not in k:
+            continue
+        a, b = k.split("::", 1)
+        w = float(v.get("w", 0.0))
+        incident[a] = incident.get(a, 0.0) + w
+        incident[b] = incident.get(b, 0.0) + w
+    scale: dict[str, float] = {
+        n: (target / tot) for n, tot in incident.items() if tot > target}
+    if not scale:
+        return 0
+    scaled = 0
+    for k, v in weights.items():
+        if "::" not in k:
+            continue
+        a, b = k.split("::", 1)
+        s = min(scale.get(a, 1.0), scale.get(b, 1.0))
+        if s < 1.0:
+            v["w"] = float(v.get("w", 0.0)) * s
+            scaled += 1
+    return scaled
 
 
 def _decay_and_prune(weights: dict, today: "_dt.date") -> int:
@@ -402,18 +644,41 @@ def reseed_edge_weights(memory_dir: Path, force: bool = False) -> dict:
 
 
 def hebbian_consolidate(memory_dir: Path, promote: bool = True) -> dict:
-    """Read co-activation log, decay weights, and (optionally) promote pairs."""
+    """Read co-activation log, decay weights, and (optionally) promote pairs.
+
+    NOTE: every weight this driver folds, decays, and promotes is a RECALL-graph co-activation
+    EDGE weight (edges.db / edge_weights.json) — a retrieval-side association only. T2/T3 nodes
+    are admitted to SAM as recall-able READ-ONLY knowledge by design and legitimately co-activate
+    in the recall graph; "promote" here means promote a co-activated PAIR into a chain edge — it
+    only affects retrieval ranking and never crosses into any model-training path (that separation
+    is owned by a training-curriculum boundary enforced elsewhere, not in this recall layer).
+    """
     paths = _bio_paths(memory_dir)
     chains_dir = memory_dir / "chains"
     reseed_edge_weights(memory_dir)  # one-time count->w migration (D2); no-op after marker
+
+    # Epiphanies v3 fold (FLAG-GATED, default OFF; FEAT-2026-06-16-memory-episodic-associative-
+    # binding). Runs INDEPENDENTLY of the live hebb_log state — it reads its OWN durable archive
+    # and is self-throttled — so it must execute even when the live consolidation early-returns
+    # (no pending live events) or is cadence-gated. Computed up front so neither early return
+    # skips it. Additive: writes only its own epiphanies_* sidecars and touches chains/* ONLY when
+    # ASTHENOS_EPI_PROMOTE_TO_LIVE is on (off by default -> no chain writes); fail-soft; no-op disabled.
+    epi_summary: dict = {}
+    try:
+        from samia.core.bio import epiphanies as _epi
+        epi_summary = _epi.consolidate(memory_dir)
+    except Exception as e:
+        epi_summary = {"error": str(e)}
+
     if not paths["hebb_log"].exists() and not paths["hebb_log_processing"].exists():
-        return {"events": 0, "promoted": 0, "pruned": 0}
+        return {"events": 0, "promoted": 0, "pruned": 0, "epiphanies": epi_summary}
 
     # Cadence gate — decouple the consolidation cadence from the per-tool idle
     # pulse / 600s job. Skip BEFORE the atomic drain so pending appends stay on
     # the live log untouched until the gate next opens (no data lost while gated).
     if _consolidate_cadence_blocked(paths):
-        return {"events": 0, "promoted": 0, "pruned": 0, "skipped": "cadence_gate"}
+        return {"events": 0, "promoted": 0, "pruned": 0,
+                "skipped": "cadence_gate", "epiphanies": epi_summary}
 
     # ATOMIC DRAIN — claim the log up front. Concurrent appends after this land
     # on a fresh live log and are picked up by the NEXT pass; they are never
@@ -431,6 +696,11 @@ def hebbian_consolidate(memory_dir: Path, promote: bool = True) -> dict:
     # Why: feeds per-node mass in the unified web store (web_store), computed OFFLINE
     #      here (never on the hot retrieval path) per the event-driven design.
     node_appearances: dict[str, int] = {}
+    # marginals (FEAT-2026-06-18 Phase-2) — load the persistent per-node C(i) + grand
+    # total N store, update it as records fold below, and persist after. Tracked on
+    # EVERY pass so the significance (lift) gate has data the moment it is flag-enabled.
+    marginals = _load_marginal_counts(memory_dir)
+    marginals_before = (marginals.get("N", 0), len(marginals.get("counts", {})))
     if drained is not None:
         with drained.open("r", encoding="utf-8") as f:
             for line in f:
@@ -445,7 +715,22 @@ def hebbian_consolidate(memory_dir: Path, promote: bool = True) -> dict:
                 nodes = rec.get("nodes") or []
                 src = rec.get("source", "genuine")
                 new_keys |= _apply_coactivation(
-                    weights, nodes, src, today, node_appearances)
+                    weights, nodes, src, today, node_appearances, marginals)
+    # Persist the marginal store only if it actually advanced this pass (avoid a
+    # no-op write when nothing was drained). Fail-soft: a write error never breaks
+    # consolidation (the gate simply has slightly stale data next pass).
+    if (marginals.get("N", 0), len(marginals.get("counts", {}))) != marginals_before:
+        try:
+            _save_marginal_counts(memory_dir, marginals)
+        except Exception as e:
+            print(f"[hebbian] marginal-count save failed: {e}", file=sys.stderr)
+
+    # SYNAPTIC SCALING (FEAT-2026-06-18 P3, FLAG-GATED default OFF) — bound each node's
+    # total incident weight to a budget so busy nodes' edges compete instead of all
+    # saturating. Runs BEFORE promotion so the gate sees the scaled weights. No-op
+    # (returns 0, no mutation) unless ASTHENOS_HEBB_SATURATE is on, so the live weight
+    # path is byte-for-byte unchanged by default.
+    _apply_synaptic_scaling(weights)
 
     # Delete the drained tempfile ONLY after its bytes are fully folded into
     # `weights` above. Unconditional once claimed: a claimed file is always a
@@ -528,9 +813,11 @@ def hebbian_consolidate(memory_dir: Path, promote: bool = True) -> dict:
         web_stats = {"error": str(e)}
         print(f"[hebbian] web_store sync failed: {e}", file=sys.stderr)
 
+    # (Epiphanies v3 fold already ran up front — see the top of this function — so it executes
+    # on every invocation regardless of the live-log early returns; epi_summary is reused here.)
     return {"events": events, "weights_total": len(weights),
             "promoted": promoted, "pruned_after_decay": True,
-            "web": web_stats}
+            "web": web_stats, "epiphanies": epi_summary}
 
 
 # --------------------------------------------------------------------------
@@ -538,7 +825,7 @@ def hebbian_consolidate(memory_dir: Path, promote: bool = True) -> dict:
 # Author:     code_warrior
 # Project:    Asthenosphere — SAM/IA
 # Version:    1.0.0
-# Phase:      Phase B (2026-06-14): carved from the samia.bio monolith during modularization
+# Phase:      Phase B (2026-06-14): the Hebbian arm carved from the samia.bio monolith
 # Layer:      core (pure library, no daemon dependency)
 # Role:       the Hebbian co-activation arm — the recall hook hebbian_record, the
 #             edge_weights.json read/write + genuine-attractor accounting, the forget /
@@ -563,5 +850,9 @@ def hebbian_consolidate(memory_dir: Path, promote: bool = True) -> dict:
 #             package facade so a facade-level patch is honored. _consolidate_cadence_blocked
 #             + _bio_paths + _load_edge_weights are reached by sibling arms (temporal_recall_
 #             sith / salience / successor) THROUGH the package facade for the same reason.
-# Lines:      564
+# Updated:    2026-06-18 (FEAT-2026-06-18 edge-quality: P2 stop-node exclusion live;
+#             Phase-2 marginal-count store + lift/PMI gate behind ASTHENOS_HEBB_LIFT_GATE
+#             [default OFF]; P3 per-node synaptic scaling behind ASTHENOS_HEBB_SATURATE
+#             [default OFF]).
+# Status:     active
 # --------------------------------------------------------------------------
