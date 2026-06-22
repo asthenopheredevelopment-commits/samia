@@ -9,6 +9,8 @@ requires a separate commercial license from the author. Contact via the
 repository's issue tracker or listed contact to arrange terms.
 
 MODELS: this software ships NO model weights. At first use it can download
-models the user selects (default: Qwen3-4B-Instruct, Apache-2.0, from
-Hugging Face) to the user's own machine, printing the model's license
-before download. Model licenses are independent of this software's license.
+models to the user's own machine: the sentence-transformers all-MiniLM-L6-v2
+embedder (Apache-2.0) on the first index build, and an optional local LLM
+(default: Qwen3-4B-Instruct-2507-Q4_K_M, Apache-2.0) on first LLM use — both
+from Hugging Face. Every model fetch prints that model's license before
+download. Model licenses are independent of this software's license.

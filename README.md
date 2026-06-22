@@ -34,8 +34,11 @@ all present in the current codebase:
   at consolidation time, writing semantic atoms additively (default off;
   `ASTHENOS_FACT_EXTRACT_ENABLED`).
 - **Contradiction / supersession detection** — embedding-similarity detection
-  (cosine >= 0.75, configurable) with optional LLM judge; auto-supersede
-  is restorable byte-exact via `restore_node`. Measured TPR 0.80 / FPR 0.10.
+  (cosine >= 0.57, configurable; a higher 0.92 bar applies to auto-supersede
+  and to pairs involving a machine-generated semantic atom) with a default-on
+  LLM judge gate (auto-degrades to candidates-only without a local model);
+  auto-supersede is restorable byte-exact via `restore_node`. Measured
+  TPR 0.80 / FPR 0.10.
 - **REM-cycle offline consolidation** — WAKE/REM state machine; maintenance
   jobs run only during REM and yield immediately to active use; entry is
   event-driven, not timer-based.
@@ -54,11 +57,15 @@ Full component internals and the module map: see [ARCHITECTURE.md](ARCHITECTURE.
 
 ## Running It
 
-Every operation is callable in-process as a library and exposed as MCP
-primitives via `core/mcp_server.py`. For autonomous upkeep — decay ticking,
-idle replay, and REM-cycle consolidation — run the maintenance daemon:
-`python -m samia.runtime.maintenanced`. Module map, component internals, and
-the systemd unit: see [ARCHITECTURE.md](ARCHITECTURE.md).
+Every operation is callable in-process as a library and exposed as MCP tool
+primitives by `core/mcp_server/`. The package ships a ready-to-run stdio MCP
+server (the `samia-mcp-server` console script); register it with an MCP client
+via `claude mcp add asthenos-memory -- samia-mcp-server` (or let `samia init`
+emit the wiring for you). For autonomous upkeep — decay ticking, idle replay,
+and REM-cycle consolidation — run the maintenance daemon:
+`python -m samia.runtime.maintenanced` (or `samia daemon run`). Module map,
+component internals, and the systemd unit: see
+[ARCHITECTURE.md](ARCHITECTURE.md).
 
 ---
 
@@ -70,9 +77,11 @@ the systemd unit: see [ARCHITECTURE.md](ARCHITECTURE.md).
 sudo apt install -y python3-venv python3-pip curl
 ```
 
-**Python**: 3.12+. Package dependencies (installed automatically by pip):
+**Python**: 3.10+. Package dependencies (installed automatically by pip):
 
 - `numpy`
+- `mcp` (FastMCP stdio server, required — backs the `samia-mcp-server` entry
+  point)
 - `sentence-transformers` with `all-MiniLM-L6-v2` (dim=384, CPU; ~90MB,
   downloads on first use from HuggingFace). Note: on CPU-only boxes install
   the CPU torch wheel FIRST to avoid ~1.5GB of unused CUDA wheels:
@@ -105,7 +114,8 @@ Nothing else touches the network — no phone-home, no update checks.
 - **`1` (standing consent)**: downloads proceed without prompting — how
   agent/CI flows operate after clearing their own permission gate.
 - **`0` (kill switch)**: every download refused in every mode, with a
-  copy-pasteable manual-download instruction.
+  copy-pasteable manual-download instruction. (The off-tokens `false`, `no`,
+  and `off` are accepted too, case-insensitive.)
 
 The MiniLM embedder loads local-only from cache first, so a box that has run
 before is always silent and fast — consent is consulted only on a genuine
@@ -120,14 +130,21 @@ whether Claude Code is present), proposes a plan, and asks before it touches
 anything. **Idempotent**: re-running on a box that's already set up (or half
 set up) is a fast no-op, not a rebuild.
 
+Clone the repository, then run the installer from the clone:
+
 ```sh
+git clone <repository-url> samia && cd samia
 bash install.sh              # interactive: detect, show the plan, confirm, install
 bash install.sh --dry-run    # print the resolved plan and change nothing
 bash install.sh --yes        # non-interactive: accept all detected defaults
 ```
 
-Piping it (`curl -fsSL https://raw.githubusercontent.com/asthenopheredevelopment-commits/samia/main/install.sh | bash`)
-runs non-interactively against the detected defaults — no tty, no prompts.
+Piping the installer non-interactively (`bash install.sh | bash`-style) runs
+against the detected defaults — no tty, no prompts. The
+`curl | bash` one-liner only works once the repository (and its raw URL) is
+publicly reachable; until then, clone with credentials (`gh auth` / an SSH key)
+and run `bash install.sh` from the clone, as the installer's own private-repo
+guidance directs.
 
 **Override any choice with an environment variable.** A var that is set is
 honored silently with no prompt, so scripted/CI runs are unaffected:
@@ -175,6 +192,14 @@ not yet tested.
 ---
 
 ## Quickstart (the manual steps install.sh automates)
+
+The shortest path is the `samia` CLI (installed with the package): `samia init`
+creates the store and emits the MCP wiring, `samia daemon run` starts the
+optional maintenance daemon, and `samia status` probes the install. For the
+simplest end-to-end script (write → index → recall using the
+`memory_write_node` / `memory_search` API), see
+[`examples/quickstart.py`](examples/quickstart.py). The manual steps below show
+the same flow at the library level.
 
 ```sh
 sudo apt install -y python3-venv python3-pip python3-dev build-essential curl git
@@ -228,11 +253,12 @@ the built-in fetcher pull a default model (license notice printed first):
 
 ```python
 from samia.runtime.model_fetch import fetch_model
-fetch_model("Qwen3-4B-Instruct-2507-Q4_K_M")   # ~2.4GB, Apache-2.0
+fetch_model("Qwen3-4B-Instruct-2507-Q4_K_M")   # ~2.5GB, Apache-2.0
 ```
 
-`core/mcp_server.py` exposes the same operations as MCP tool primitives for
-agent harnesses; wire it to any stdio MCP wrapper.
+`core/mcp_server/` provides the per-tool backend functions, and the shipped
+`samia-mcp-server` console script is the runnable stdio MCP server that exposes
+them to agent harnesses (`claude mcp add asthenos-memory -- samia-mcp-server`).
 
 ---
 

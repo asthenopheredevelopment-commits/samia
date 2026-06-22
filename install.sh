@@ -8,8 +8,10 @@
 #   - SAMIA_NONINTERACTIVE=1 is set
 #   - --yes flag is passed
 #
-# From a clone:   bash install.sh
-# Public:         curl -fsSL https://raw.githubusercontent.com/asthenopheredevelopment-commits/samia/main/install.sh | bash
+# From a clone:   bash install.sh   (recommended; works for a private repo too)
+# Raw one-liner:  curl -fsSL https://raw.githubusercontent.com/asthenopheredevelopment-commits/samia/main/install.sh | bash
+#                 (only resolves once the repo is PUBLIC — for a private repo,
+#                  clone with credentials/'gh auth' and run from the clone)
 #
 # FLAGS:
 #   -y, --yes     Accept all defaults, no prompts (same as SAMIA_NONINTERACTIVE=1)
