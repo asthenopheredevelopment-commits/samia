@@ -1,0 +1,59 @@
+{
+  "axis": "a9_latency",
+  "by_size": {
+    "100": {
+      "gold_hit_rate": 1.0,
+      "gold_hits": 100,
+      "index_build_seconds": 0.146,
+      "ingest_items": 100,
+      "ingest_items_per_s": 671.33,
+      "ingest_seconds": 0.149,
+      "k": 10,
+      "probes": 100,
+      "recall_max_ms": 8.717,
+      "recall_mean_ms": 6.167,
+      "recall_min_ms": 5.78,
+      "recall_p50_ms": 6.092,
+      "recall_p95_ms": 6.538,
+      "size": 100
+    },
+    "1000": {
+      "gold_hit_rate": 0.99,
+      "gold_hits": 198,
+      "index_build_seconds": 1.624,
+      "ingest_items": 1000,
+      "ingest_items_per_s": 603.2,
+      "ingest_seconds": 1.658,
+      "k": 10,
+      "probes": 200,
+      "recall_max_ms": 9.71,
+      "recall_mean_ms": 7.357,
+      "recall_min_ms": 6.33,
+      "recall_p50_ms": 7.237,
+      "recall_p95_ms": 8.677,
+      "size": 1000
+    },
+    "10000": {
+      "gold_hit_rate": 0.8,
+      "gold_hits": 160,
+      "index_build_seconds": 15.387,
+      "ingest_items": 10000,
+      "ingest_items_per_s": 635.42,
+      "ingest_seconds": 15.738,
+      "k": 10,
+      "probes": 200,
+      "recall_max_ms": 85.907,
+      "recall_mean_ms": 72.133,
+      "recall_min_ms": 28.138,
+      "recall_p50_ms": 72.137,
+      "recall_p95_ms": 78.933,
+      "size": 10000
+    }
+  },
+  "metric": "p50/p95 recall ms + ingest items/s, per store size",
+  "sizes": [
+    100,
+    1000,
+    10000
+  ]
+}

@@ -1,0 +1,357 @@
+{
+  "schema_version": 1,
+  "axis": "a7_distill",
+  "seed": 1337,
+  "k_values": [
+    1,
+    5,
+    10
+  ],
+  "description": "A7 distillation-fidelity corpus: verbose multi-claim sources, each annotated with the gold claims a faithful atomization must preserve. The source is distilled by SAM/IA's offline atomizer, the atoms are stored and recalled, and claim-preservation F1 is scored programmatically from key-term coverage (primary, no model). A separate paraphrase subset (judge_eval claims) is scored by a pinned local judge with saved transcripts (open-ended only).",
+  "source_count": 8,
+  "claim_count": 22,
+  "judge_claim_count": 3,
+  "sources": [
+    {
+      "id": "src_pixel",
+      "valid_from": "2023-04-01",
+      "source": "session_a",
+      "text": "On the first of April 2023 Maria finally went down to the Springfield animal shelter and adopted a calico cat. She decided to name the cat Pixel. The shelter staff said Pixel had been waiting for a home for almost six months.",
+      "claims": [
+        {
+          "claim_id": "pixel_species",
+          "key_terms": [
+            "calico",
+            "cat"
+          ],
+          "probe": "What kind of animal did Maria adopt?",
+          "forbidden": [
+            "dog",
+            "kitten"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "pixel_name",
+          "key_terms": [
+            "pixel"
+          ],
+          "probe": "What did Maria name her new cat?",
+          "forbidden": [],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "pixel_shelter",
+          "key_terms": [
+            "springfield",
+            "shelter"
+          ],
+          "probe": "Where did Maria adopt the cat from?",
+          "forbidden": [],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "pixel_adoption_act",
+          "key_terms": [
+            "adopted"
+          ],
+          "probe": "Did Maria take on responsibility for a new pet?",
+          "forbidden": [
+            "returned",
+            "gave away"
+          ],
+          "judge_eval": true,
+          "paraphrase": "Maria became the owner of a new pet companion."
+        }
+      ]
+    },
+    {
+      "id": "src_telescope",
+      "valid_from": "2022-12-10",
+      "source": "session_d",
+      "text": "Over the long winter Lena spent her weekends in the garage. Piece by piece she assembled a reflecting telescope from a kit. By spring she could see the rings of Saturn through it.",
+      "claims": [
+        {
+          "claim_id": "telescope_what",
+          "key_terms": [
+            "reflecting",
+            "telescope"
+          ],
+          "probe": "What instrument did Lena build over the winter?",
+          "forbidden": [
+            "microscope",
+            "refracting"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "telescope_where",
+          "key_terms": [
+            "garage"
+          ],
+          "probe": "Where did Lena assemble the telescope?",
+          "forbidden": [
+            "kitchen",
+            "shed"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "telescope_saw",
+          "key_terms": [
+            "saturn"
+          ],
+          "probe": "What did Lena observe through her telescope?",
+          "forbidden": [
+            "mars",
+            "jupiter"
+          ],
+          "judge_eval": false
+        }
+      ]
+    },
+    {
+      "id": "src_canoe",
+      "valid_from": "2022-09-22",
+      "source": "session_h",
+      "text": "Diego spent the late summer carving a canoe out of cedar. When it was finished he carried it down to the lake and paddled all the way across to the far shore.",
+      "claims": [
+        {
+          "claim_id": "canoe_material",
+          "key_terms": [
+            "cedar"
+          ],
+          "probe": "What wood did Diego use for his canoe?",
+          "forbidden": [
+            "oak",
+            "pine",
+            "birch"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "canoe_use",
+          "key_terms": [
+            "lake"
+          ],
+          "probe": "Where did Diego paddle the canoe?",
+          "forbidden": [
+            "river",
+            "ocean",
+            "sea"
+          ],
+          "judge_eval": false
+        }
+      ]
+    },
+    {
+      "id": "src_berlin",
+      "valid_from": "2022-09-01",
+      "source": "session_c",
+      "text": "Priya accepted an offer in the autumn of 2022. She had been interviewing for months. The role was a data engineering position, and it meant moving to Berlin. She started in September.",
+      "claims": [
+        {
+          "claim_id": "berlin_role",
+          "key_terms": [
+            "data",
+            "engineering"
+          ],
+          "probe": "What job did Priya start in 2022?",
+          "forbidden": [
+            "scientist",
+            "manager"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "berlin_city",
+          "key_terms": [
+            "berlin"
+          ],
+          "probe": "Which city did Priya move to for the new job?",
+          "forbidden": [
+            "munich",
+            "hamburg"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "berlin_relocate",
+          "key_terms": [
+            "moving",
+            "berlin"
+          ],
+          "probe": "Did the new job require Priya to live somewhere else?",
+          "forbidden": [
+            "stayed",
+            "remote"
+          ],
+          "judge_eval": true,
+          "paraphrase": "Priya had to change the city she lived in for work."
+        }
+      ]
+    },
+    {
+      "id": "src_toyota",
+      "valid_from": "2021-06-15",
+      "source": "session_b",
+      "text": "David had been saving for two years, and in 2021 he bought a brand-new sedan. The car was a blue Toyota. He drives it to work every morning across the bridge.",
+      "claims": [
+        {
+          "claim_id": "toyota_make",
+          "key_terms": [
+            "toyota"
+          ],
+          "probe": "What make of car did David buy?",
+          "forbidden": [
+            "honda",
+            "ford"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "toyota_colour",
+          "key_terms": [
+            "blue"
+          ],
+          "probe": "What colour was David's new car?",
+          "forbidden": [
+            "red",
+            "silver",
+            "black"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "toyota_bodystyle",
+          "key_terms": [
+            "sedan"
+          ],
+          "probe": "What body style was David's Toyota?",
+          "forbidden": [
+            "truck",
+            "suv",
+            "coupe"
+          ],
+          "judge_eval": false
+        }
+      ]
+    },
+    {
+      "id": "src_greenhouse",
+      "valid_from": "2022-08-05",
+      "source": "session_g",
+      "text": "Omar is proud of his small backyard greenhouse. In it he grows heirloom tomatoes, the kind you cannot buy in shops. He waters them every evening.",
+      "claims": [
+        {
+          "claim_id": "greenhouse_crop",
+          "key_terms": [
+            "heirloom",
+            "tomatoes"
+          ],
+          "probe": "What does Omar grow in his greenhouse?",
+          "forbidden": [
+            "peppers",
+            "cucumbers"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "greenhouse_place",
+          "key_terms": [
+            "backyard",
+            "greenhouse"
+          ],
+          "probe": "Where does Omar grow his tomatoes?",
+          "forbidden": [
+            "balcony",
+            "field"
+          ],
+          "judge_eval": false
+        }
+      ]
+    },
+    {
+      "id": "src_marathon",
+      "valid_from": "2023-05-21",
+      "source": "session_e",
+      "text": "Marcus trained all spring for the coastal marathon. On race day the weather was perfect. He crossed the finish line in just under four hours, a personal best.",
+      "claims": [
+        {
+          "claim_id": "marathon_event",
+          "key_terms": [
+            "coastal",
+            "marathon"
+          ],
+          "probe": "What race did Marcus run in the spring?",
+          "forbidden": [
+            "sprint",
+            "triathlon"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "marathon_time",
+          "key_terms": [
+            "four",
+            "hours"
+          ],
+          "probe": "Roughly how long did Marcus take to finish?",
+          "forbidden": [
+            "three",
+            "five"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "marathon_pb",
+          "key_terms": [
+            "personal",
+            "best"
+          ],
+          "probe": "Was this Marcus's quickest time at this distance?",
+          "forbidden": [
+            "slowest",
+            "worst"
+          ],
+          "judge_eval": true,
+          "paraphrase": "It was the fastest Marcus had ever run that distance."
+        }
+      ]
+    },
+    {
+      "id": "src_violin",
+      "valid_from": "2023-03-30",
+      "source": "session_f",
+      "text": "Before the recital Sofia carefully restrung an old violin. It was not just any violin \u2014 it had belonged to her grandmother. She tuned each string by ear.",
+      "claims": [
+        {
+          "claim_id": "violin_action",
+          "key_terms": [
+            "restrung",
+            "violin"
+          ],
+          "probe": "What did Sofia do to the violin before the recital?",
+          "forbidden": [
+            "sold",
+            "broke"
+          ],
+          "judge_eval": false
+        },
+        {
+          "claim_id": "violin_owner",
+          "key_terms": [
+            "grandmother"
+          ],
+          "probe": "Whose violin was it originally?",
+          "forbidden": [
+            "mother",
+            "aunt",
+            "sister"
+          ],
+          "judge_eval": false
+        }
+      ]
+    }
+  ]
+}

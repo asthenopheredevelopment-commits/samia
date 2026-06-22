@@ -1,0 +1,816 @@
+{
+  "axis": "a1_retrieval",
+  "description": "Retrieval accuracy: N distinct-topic facts, one paraphrased query per fact; score whether the gold fact is in recall top-k. Retrieval only \u2014 separate data from A2 retention (defect D6). One unambiguous gold per query (defects D1/D2/D4).",
+  "items": [
+    {
+      "gold": "a1_aisha_dish",
+      "id": "a1_aisha_dish",
+      "kind": "dish",
+      "query": "What food is Aisha known for cooking?",
+      "rationale": "query asks for Aisha's dish; only a1_aisha_dish states it ('spinach dumplings'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Aisha's signature dish is spinach dumplings."
+    },
+    {
+      "gold": "a1_aisha_sport",
+      "id": "a1_aisha_sport",
+      "kind": "sport",
+      "query": "Which sport does Aisha play competitively?",
+      "rationale": "query asks for Aisha's sport; only a1_aisha_sport states it ('speed climbing'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Aisha competes in speed climbing on weekends."
+    },
+    {
+      "gold": "a1_amara_city",
+      "id": "a1_amara_city",
+      "kind": "city",
+      "query": "Where did Amara relocate?",
+      "rationale": "query asks for Amara's city; only a1_amara_city states it ('Casablanca'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Amara moved to Casablanca for work."
+    },
+    {
+      "gold": "a1_amara_dish",
+      "id": "a1_amara_dish",
+      "kind": "dish",
+      "query": "What food is Amara known for cooking?",
+      "rationale": "query asks for Amara's dish; only a1_amara_dish states it ('mushroom risotto'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Amara's signature dish is mushroom risotto."
+    },
+    {
+      "gold": "a1_amara_instrument",
+      "id": "a1_amara_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Amara play?",
+      "rationale": "query asks for Amara's instrument; only a1_amara_instrument states it ('trumpet'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Amara learned to play the trumpet."
+    },
+    {
+      "gold": "a1_amara_sport",
+      "id": "a1_amara_sport",
+      "kind": "sport",
+      "query": "Which sport does Amara play competitively?",
+      "rationale": "query asks for Amara's sport; only a1_amara_sport states it ('downhill skiing'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Amara competes in downhill skiing on weekends."
+    },
+    {
+      "gold": "a1_anika_hobby",
+      "id": "a1_anika_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Anika start?",
+      "rationale": "query asks for Anika's hobby; only a1_anika_hobby states it ('kayaking'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Anika took up kayaking this spring."
+    },
+    {
+      "gold": "a1_anika_language",
+      "id": "a1_anika_language",
+      "kind": "language",
+      "query": "Which language is Anika currently learning?",
+      "rationale": "query asks for Anika's language; only a1_anika_language states it ('Hungarian'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Anika is studying Hungarian this year."
+    },
+    {
+      "gold": "a1_bruno_hobby",
+      "id": "a1_bruno_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Bruno start?",
+      "rationale": "query asks for Bruno's hobby; only a1_bruno_hobby states it ('model railroading'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Bruno took up model railroading this spring."
+    },
+    {
+      "gold": "a1_bruno_instrument",
+      "id": "a1_bruno_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Bruno play?",
+      "rationale": "query asks for Bruno's instrument; only a1_bruno_instrument states it ('cello'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Bruno learned to play the cello."
+    },
+    {
+      "gold": "a1_bruno_pet",
+      "id": "a1_bruno_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Bruno take in?",
+      "rationale": "query asks for Bruno's pet; only a1_bruno_pet states it ('beagle puppy'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Bruno adopted a beagle puppy as a pet."
+    },
+    {
+      "gold": "a1_camila_car",
+      "id": "a1_camila_car",
+      "kind": "car",
+      "query": "Which vehicle did Camila purchase?",
+      "rationale": "query asks for Camila's car; only a1_camila_car states it ('green roadster'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Camila bought a green roadster last year."
+    },
+    {
+      "gold": "a1_camila_hobby",
+      "id": "a1_camila_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Camila start?",
+      "rationale": "query asks for Camila's hobby; only a1_camila_hobby states it ('stargazing'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Camila took up stargazing this spring."
+    },
+    {
+      "gold": "a1_camila_job",
+      "id": "a1_camila_job",
+      "kind": "job",
+      "query": "What is Camila's profession these days?",
+      "rationale": "query asks for Camila's job; only a1_camila_job states it ('speech therapist'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Camila now works as a speech therapist."
+    },
+    {
+      "gold": "a1_clara_instrument",
+      "id": "a1_clara_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Clara play?",
+      "rationale": "query asks for Clara's instrument; only a1_clara_instrument states it ('banjo'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Clara learned to play the banjo."
+    },
+    {
+      "gold": "a1_david_dish",
+      "id": "a1_david_dish",
+      "kind": "dish",
+      "query": "What food is David known for cooking?",
+      "rationale": "query asks for David's dish; only a1_david_dish states it ('okra gumbo'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "David's signature dish is okra gumbo."
+    },
+    {
+      "gold": "a1_diego_instrument",
+      "id": "a1_diego_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Diego play?",
+      "rationale": "query asks for Diego's instrument; only a1_diego_instrument states it ('oboe'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Diego learned to play the oboe."
+    },
+    {
+      "gold": "a1_diego_job",
+      "id": "a1_diego_job",
+      "kind": "job",
+      "query": "What is Diego's profession these days?",
+      "rationale": "query asks for Diego's job; only a1_diego_job states it ('ferry captain'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Diego now works as a ferry captain."
+    },
+    {
+      "gold": "a1_elena_language",
+      "id": "a1_elena_language",
+      "kind": "language",
+      "query": "Which language is Elena currently learning?",
+      "rationale": "query asks for Elena's language; only a1_elena_language states it ('Arabic'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Elena is studying Arabic this year."
+    },
+    {
+      "gold": "a1_elena_plant",
+      "id": "a1_elena_plant",
+      "kind": "plant",
+      "query": "What is Elena cultivating outdoors?",
+      "rationale": "query asks for Elena's plant; only a1_elena_plant states it ('bonsai maples'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Elena is growing bonsai maples in the garden."
+    },
+    {
+      "gold": "a1_freya_city",
+      "id": "a1_freya_city",
+      "kind": "city",
+      "query": "Where did Freya relocate?",
+      "rationale": "query asks for Freya's city; only a1_freya_city states it ('Wellington'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Freya moved to Wellington for work."
+    },
+    {
+      "gold": "a1_freya_instrument",
+      "id": "a1_freya_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Freya play?",
+      "rationale": "query asks for Freya's instrument; only a1_freya_instrument states it ('harp'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Freya learned to play the harp."
+    },
+    {
+      "gold": "a1_freya_language",
+      "id": "a1_freya_language",
+      "kind": "language",
+      "query": "Which language is Freya currently learning?",
+      "rationale": "query asks for Freya's language; only a1_freya_language states it ('Icelandic'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Freya is studying Icelandic this year."
+    },
+    {
+      "gold": "a1_freya_plant",
+      "id": "a1_freya_plant",
+      "kind": "plant",
+      "query": "What is Freya cultivating outdoors?",
+      "rationale": "query asks for Freya's plant; only a1_freya_plant states it ('artichokes'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Freya is growing artichokes in the garden."
+    },
+    {
+      "gold": "a1_greta_dish",
+      "id": "a1_greta_dish",
+      "kind": "dish",
+      "query": "What food is Greta known for cooking?",
+      "rationale": "query asks for Greta's dish; only a1_greta_dish states it ('pumpkin gnocchi'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Greta's signature dish is pumpkin gnocchi."
+    },
+    {
+      "gold": "a1_hannah_city",
+      "id": "a1_hannah_city",
+      "kind": "city",
+      "query": "Where did Hannah relocate?",
+      "rationale": "query asks for Hannah's city; only a1_hannah_city states it ('Lisbon'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Hannah moved to Lisbon for work."
+    },
+    {
+      "gold": "a1_hannah_language",
+      "id": "a1_hannah_language",
+      "kind": "language",
+      "query": "Which language is Hannah currently learning?",
+      "rationale": "query asks for Hannah's language; only a1_hannah_language states it ('Welsh'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Hannah is studying Welsh this year."
+    },
+    {
+      "gold": "a1_hannah_plant",
+      "id": "a1_hannah_plant",
+      "kind": "plant",
+      "query": "What is Hannah cultivating outdoors?",
+      "rationale": "query asks for Hannah's plant; only a1_hannah_plant states it ('mint'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Hannah is growing mint in the garden."
+    },
+    {
+      "gold": "a1_hugo_language",
+      "id": "a1_hugo_language",
+      "kind": "language",
+      "query": "Which language is Hugo currently learning?",
+      "rationale": "query asks for Hugo's language; only a1_hugo_language states it ('Mandarin'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Hugo is studying Mandarin this year."
+    },
+    {
+      "gold": "a1_hugo_sport",
+      "id": "a1_hugo_sport",
+      "kind": "sport",
+      "query": "Which sport does Hugo play competitively?",
+      "rationale": "query asks for Hugo's sport; only a1_hugo_sport states it ('trail running'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Hugo competes in trail running on weekends."
+    },
+    {
+      "gold": "a1_idris_car",
+      "id": "a1_idris_car",
+      "kind": "car",
+      "query": "Which vehicle did Idris purchase?",
+      "rationale": "query asks for Idris's car; only a1_idris_car states it ('red hatchback'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Idris bought a red hatchback last year."
+    },
+    {
+      "gold": "a1_idris_language",
+      "id": "a1_idris_language",
+      "kind": "language",
+      "query": "Which language is Idris currently learning?",
+      "rationale": "query asks for Idris's language; only a1_idris_language states it ('Vietnamese'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Idris is studying Vietnamese this year."
+    },
+    {
+      "gold": "a1_idris_sport",
+      "id": "a1_idris_sport",
+      "kind": "sport",
+      "query": "Which sport does Idris play competitively?",
+      "rationale": "query asks for Idris's sport; only a1_idris_sport states it ('dressage'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Idris competes in dressage on weekends."
+    },
+    {
+      "gold": "a1_ingrid_city",
+      "id": "a1_ingrid_city",
+      "kind": "city",
+      "query": "Where did Ingrid relocate?",
+      "rationale": "query asks for Ingrid's city; only a1_ingrid_city states it ('Osaka'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Ingrid moved to Osaka for work."
+    },
+    {
+      "gold": "a1_ingrid_hobby",
+      "id": "a1_ingrid_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Ingrid start?",
+      "rationale": "query asks for Ingrid's hobby; only a1_ingrid_hobby states it ('watercolor painting'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Ingrid took up watercolor painting this spring."
+    },
+    {
+      "gold": "a1_ingrid_plant",
+      "id": "a1_ingrid_plant",
+      "kind": "plant",
+      "query": "What is Ingrid cultivating outdoors?",
+      "rationale": "query asks for Ingrid's plant; only a1_ingrid_plant states it ('lavender'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Ingrid is growing lavender in the garden."
+    },
+    {
+      "gold": "a1_kenji_city",
+      "id": "a1_kenji_city",
+      "kind": "city",
+      "query": "Where did Kenji relocate?",
+      "rationale": "query asks for Kenji's city; only a1_kenji_city states it ('Montreal'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Kenji moved to Montreal for work."
+    },
+    {
+      "gold": "a1_leila_instrument",
+      "id": "a1_leila_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Leila play?",
+      "rationale": "query asks for Leila's instrument; only a1_leila_instrument states it ('accordion'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Leila learned to play the accordion."
+    },
+    {
+      "gold": "a1_leila_job",
+      "id": "a1_leila_job",
+      "kind": "job",
+      "query": "What is Leila's profession these days?",
+      "rationale": "query asks for Leila's job; only a1_leila_job states it ('air traffic controller'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Leila now works as a air traffic controller."
+    },
+    {
+      "gold": "a1_lena_pet",
+      "id": "a1_lena_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Lena take in?",
+      "rationale": "query asks for Lena's pet; only a1_lena_pet states it ('goldfish'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Lena adopted a goldfish as a pet."
+    },
+    {
+      "gold": "a1_luca_car",
+      "id": "a1_luca_car",
+      "kind": "car",
+      "query": "Which vehicle did Luca purchase?",
+      "rationale": "query asks for Luca's car; only a1_luca_car states it ('blue minivan'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Luca bought a blue minivan last year."
+    },
+    {
+      "gold": "a1_luca_city",
+      "id": "a1_luca_city",
+      "kind": "city",
+      "query": "Where did Luca relocate?",
+      "rationale": "query asks for Luca's city; only a1_luca_city states it ('Krakow'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Luca moved to Krakow for work."
+    },
+    {
+      "gold": "a1_luca_dish",
+      "id": "a1_luca_dish",
+      "kind": "dish",
+      "query": "What food is Luca known for cooking?",
+      "rationale": "query asks for Luca's dish; only a1_luca_dish states it ('seafood paella'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Luca's signature dish is seafood paella."
+    },
+    {
+      "gold": "a1_luca_plant",
+      "id": "a1_luca_plant",
+      "kind": "plant",
+      "query": "What is Luca cultivating outdoors?",
+      "rationale": "query asks for Luca's plant; only a1_luca_plant states it ('sunflowers'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Luca is growing sunflowers in the garden."
+    },
+    {
+      "gold": "a1_marcus_car",
+      "id": "a1_marcus_car",
+      "kind": "car",
+      "query": "Which vehicle did Marcus purchase?",
+      "rationale": "query asks for Marcus's car; only a1_marcus_car states it ('silver pickup truck'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Marcus bought a silver pickup truck last year."
+    },
+    {
+      "gold": "a1_marcus_dish",
+      "id": "a1_marcus_dish",
+      "kind": "dish",
+      "query": "What food is Marcus known for cooking?",
+      "rationale": "query asks for Marcus's dish; only a1_marcus_dish states it ('coconut curry'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Marcus's signature dish is coconut curry."
+    },
+    {
+      "gold": "a1_marcus_hobby",
+      "id": "a1_marcus_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Marcus start?",
+      "rationale": "query asks for Marcus's hobby; only a1_marcus_hobby states it ('geocaching'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Marcus took up geocaching this spring."
+    },
+    {
+      "gold": "a1_maria_car",
+      "id": "a1_maria_car",
+      "kind": "car",
+      "query": "Which vehicle did Maria purchase?",
+      "rationale": "query asks for Maria's car; only a1_maria_car states it ('orange camper van'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Maria bought a orange camper van last year."
+    },
+    {
+      "gold": "a1_maria_city",
+      "id": "a1_maria_city",
+      "kind": "city",
+      "query": "Where did Maria relocate?",
+      "rationale": "query asks for Maria's city; only a1_maria_city states it ('Bogota'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Maria moved to Bogota for work."
+    },
+    {
+      "gold": "a1_mateo_city",
+      "id": "a1_mateo_city",
+      "kind": "city",
+      "query": "Where did Mateo relocate?",
+      "rationale": "query asks for Mateo's city; only a1_mateo_city states it ('Tallinn'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Mateo moved to Tallinn for work."
+    },
+    {
+      "gold": "a1_mateo_job",
+      "id": "a1_mateo_job",
+      "kind": "job",
+      "query": "What is Mateo's profession these days?",
+      "rationale": "query asks for Mateo's job; only a1_mateo_job states it ('forensic accountant'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Mateo now works as a forensic accountant."
+    },
+    {
+      "gold": "a1_mateo_language",
+      "id": "a1_mateo_language",
+      "kind": "language",
+      "query": "Which language is Mateo currently learning?",
+      "rationale": "query asks for Mateo's language; only a1_mateo_language states it ('Korean'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Mateo is studying Korean this year."
+    },
+    {
+      "gold": "a1_mateo_pet",
+      "id": "a1_mateo_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Mateo take in?",
+      "rationale": "query asks for Mateo's pet; only a1_mateo_pet states it ('green parrot'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Mateo adopted a green parrot as a pet."
+    },
+    {
+      "gold": "a1_mateo_sport",
+      "id": "a1_mateo_sport",
+      "kind": "sport",
+      "query": "Which sport does Mateo play competitively?",
+      "rationale": "query asks for Mateo's sport; only a1_mateo_sport states it ('open-water swimming'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Mateo competes in open-water swimming on weekends."
+    },
+    {
+      "gold": "a1_mei_city",
+      "id": "a1_mei_city",
+      "kind": "city",
+      "query": "Where did Mei relocate?",
+      "rationale": "query asks for Mei's city; only a1_mei_city states it ('Helsinki'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Mei moved to Helsinki for work."
+    },
+    {
+      "gold": "a1_mei_sport",
+      "id": "a1_mei_sport",
+      "kind": "sport",
+      "query": "Which sport does Mei play competitively?",
+      "rationale": "query asks for Mei's sport; only a1_mei_sport states it ('rowing'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Mei competes in rowing on weekends."
+    },
+    {
+      "gold": "a1_nadia_car",
+      "id": "a1_nadia_car",
+      "kind": "car",
+      "query": "Which vehicle did Nadia purchase?",
+      "rationale": "query asks for Nadia's car; only a1_nadia_car states it ('grey crossover SUV'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Nadia bought a grey crossover SUV last year."
+    },
+    {
+      "gold": "a1_nadia_instrument",
+      "id": "a1_nadia_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Nadia play?",
+      "rationale": "query asks for Nadia's instrument; only a1_nadia_instrument states it ('clarinet'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Nadia learned to play the clarinet."
+    },
+    {
+      "gold": "a1_nadia_sport",
+      "id": "a1_nadia_sport",
+      "kind": "sport",
+      "query": "Which sport does Nadia play competitively?",
+      "rationale": "query asks for Nadia's sport; only a1_nadia_sport states it ('badminton'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Nadia competes in badminton on weekends."
+    },
+    {
+      "gold": "a1_noah_city",
+      "id": "a1_noah_city",
+      "kind": "city",
+      "query": "Where did Noah relocate?",
+      "rationale": "query asks for Noah's city; only a1_noah_city states it ('Nairobi'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Noah moved to Nairobi for work."
+    },
+    {
+      "gold": "a1_noah_pet",
+      "id": "a1_noah_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Noah take in?",
+      "rationale": "query asks for Noah's pet; only a1_noah_pet states it ('leopard gecko'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Noah adopted a leopard gecko as a pet."
+    },
+    {
+      "gold": "a1_omar_city",
+      "id": "a1_omar_city",
+      "kind": "city",
+      "query": "Where did Omar relocate?",
+      "rationale": "query asks for Omar's city; only a1_omar_city states it ('Reykjavik'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Omar moved to Reykjavik for work."
+    },
+    {
+      "gold": "a1_omar_job",
+      "id": "a1_omar_job",
+      "kind": "job",
+      "query": "What is Omar's profession these days?",
+      "rationale": "query asks for Omar's job; only a1_omar_job states it ('jazz pianist'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Omar now works as a jazz pianist."
+    },
+    {
+      "gold": "a1_owen_instrument",
+      "id": "a1_owen_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Owen play?",
+      "rationale": "query asks for Owen's instrument; only a1_owen_instrument states it ('mandolin'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Owen learned to play the mandolin."
+    },
+    {
+      "gold": "a1_owen_sport",
+      "id": "a1_owen_sport",
+      "kind": "sport",
+      "query": "Which sport does Owen play competitively?",
+      "rationale": "query asks for Owen's sport; only a1_owen_sport states it ('squash'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Owen competes in squash on weekends."
+    },
+    {
+      "gold": "a1_pablo_sport",
+      "id": "a1_pablo_sport",
+      "kind": "sport",
+      "query": "Which sport does Pablo play competitively?",
+      "rationale": "query asks for Pablo's sport; only a1_pablo_sport states it ('fencing'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Pablo competes in fencing on weekends."
+    },
+    {
+      "gold": "a1_priya_hobby",
+      "id": "a1_priya_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Priya start?",
+      "rationale": "query asks for Priya's hobby; only a1_priya_hobby states it ('calligraphy'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Priya took up calligraphy this spring."
+    },
+    {
+      "gold": "a1_rashid_dish",
+      "id": "a1_rashid_dish",
+      "kind": "dish",
+      "query": "What food is Rashid known for cooking?",
+      "rationale": "query asks for Rashid's dish; only a1_rashid_dish states it ('chestnut soup'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Rashid's signature dish is chestnut soup."
+    },
+    {
+      "gold": "a1_rashid_hobby",
+      "id": "a1_rashid_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Rashid start?",
+      "rationale": "query asks for Rashid's hobby; only a1_rashid_hobby states it ('bird watching'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Rashid took up bird watching this spring."
+    },
+    {
+      "gold": "a1_rashid_instrument",
+      "id": "a1_rashid_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Rashid play?",
+      "rationale": "query asks for Rashid's instrument; only a1_rashid_instrument states it ('bassoon'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Rashid learned to play the bassoon."
+    },
+    {
+      "gold": "a1_rashid_job",
+      "id": "a1_rashid_job",
+      "kind": "job",
+      "query": "What is Rashid's profession these days?",
+      "rationale": "query asks for Rashid's job; only a1_rashid_job states it ('glass blower'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Rashid now works as a glass blower."
+    },
+    {
+      "gold": "a1_rashid_language",
+      "id": "a1_rashid_language",
+      "kind": "language",
+      "query": "Which language is Rashid currently learning?",
+      "rationale": "query asks for Rashid's language; only a1_rashid_language states it ('Greek'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Rashid is studying Greek this year."
+    },
+    {
+      "gold": "a1_ravi_job",
+      "id": "a1_ravi_job",
+      "kind": "job",
+      "query": "What is Ravi's profession these days?",
+      "rationale": "query asks for Ravi's job; only a1_ravi_job states it ('marine biologist'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Ravi now works as a marine biologist."
+    },
+    {
+      "gold": "a1_ravi_pet",
+      "id": "a1_ravi_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Ravi take in?",
+      "rationale": "query asks for Ravi's pet; only a1_ravi_pet states it ('cockatiel'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Ravi adopted a cockatiel as a pet."
+    },
+    {
+      "gold": "a1_saanvi_car",
+      "id": "a1_saanvi_car",
+      "kind": "car",
+      "query": "Which vehicle did Saanvi purchase?",
+      "rationale": "query asks for Saanvi's car; only a1_saanvi_car states it ('teal city scooter'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Saanvi bought a teal city scooter last year."
+    },
+    {
+      "gold": "a1_saanvi_hobby",
+      "id": "a1_saanvi_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Saanvi start?",
+      "rationale": "query asks for Saanvi's hobby; only a1_saanvi_hobby states it ('quilting'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Saanvi took up quilting this spring."
+    },
+    {
+      "gold": "a1_saanvi_pet",
+      "id": "a1_saanvi_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Saanvi take in?",
+      "rationale": "query asks for Saanvi's pet; only a1_saanvi_pet states it ('tortoise'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Saanvi adopted a tortoise as a pet."
+    },
+    {
+      "gold": "a1_saanvi_plant",
+      "id": "a1_saanvi_plant",
+      "kind": "plant",
+      "query": "What is Saanvi cultivating outdoors?",
+      "rationale": "query asks for Saanvi's plant; only a1_saanvi_plant states it ('saffron crocus'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Saanvi is growing saffron crocus in the garden."
+    },
+    {
+      "gold": "a1_sofia_car",
+      "id": "a1_sofia_car",
+      "kind": "car",
+      "query": "Which vehicle did Sofia purchase?",
+      "rationale": "query asks for Sofia's car; only a1_sofia_car states it ('black electric sedan'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Sofia bought a black electric sedan last year."
+    },
+    {
+      "gold": "a1_sofia_hobby",
+      "id": "a1_sofia_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Sofia start?",
+      "rationale": "query asks for Sofia's hobby; only a1_sofia_hobby states it ('beekeeping'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Sofia took up beekeeping this spring."
+    },
+    {
+      "gold": "a1_sofia_instrument",
+      "id": "a1_sofia_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Sofia play?",
+      "rationale": "query asks for Sofia's instrument; only a1_sofia_instrument states it ('sitar'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Sofia learned to play the sitar."
+    },
+    {
+      "gold": "a1_sofia_job",
+      "id": "a1_sofia_job",
+      "kind": "job",
+      "query": "What is Sofia's profession these days?",
+      "rationale": "query asks for Sofia's job; only a1_sofia_job states it ('pastry chef'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Sofia now works as a pastry chef."
+    },
+    {
+      "gold": "a1_sofia_language",
+      "id": "a1_sofia_language",
+      "kind": "language",
+      "query": "Which language is Sofia currently learning?",
+      "rationale": "query asks for Sofia's language; only a1_sofia_language states it ('Finnish'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Sofia is studying Finnish this year."
+    },
+    {
+      "gold": "a1_sofia_sport",
+      "id": "a1_sofia_sport",
+      "kind": "sport",
+      "query": "Which sport does Sofia play competitively?",
+      "rationale": "query asks for Sofia's sport; only a1_sofia_sport states it ('archery'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Sofia competes in archery on weekends."
+    },
+    {
+      "gold": "a1_soren_dish",
+      "id": "a1_soren_dish",
+      "kind": "dish",
+      "query": "What food is Soren known for cooking?",
+      "rationale": "query asks for Soren's dish; only a1_soren_dish states it ('beet borscht'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Soren's signature dish is beet borscht."
+    },
+    {
+      "gold": "a1_soren_hobby",
+      "id": "a1_soren_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Soren start?",
+      "rationale": "query asks for Soren's hobby; only a1_soren_hobby states it ('orienteering'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Soren took up orienteering this spring."
+    },
+    {
+      "gold": "a1_soren_pet",
+      "id": "a1_soren_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Soren take in?",
+      "rationale": "query asks for Soren's pet; only a1_soren_pet states it ('miniature pony'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Soren adopted a miniature pony as a pet."
+    },
+    {
+      "gold": "a1_soren_sport",
+      "id": "a1_soren_sport",
+      "kind": "sport",
+      "query": "Which sport does Soren play competitively?",
+      "rationale": "query asks for Soren's sport; only a1_soren_sport states it ('table tennis'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Soren competes in table tennis on weekends."
+    },
+    {
+      "gold": "a1_tariq_dish",
+      "id": "a1_tariq_dish",
+      "kind": "dish",
+      "query": "What food is Tariq known for cooking?",
+      "rationale": "query asks for Tariq's dish; only a1_tariq_dish states it ('plantain stew'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Tariq's signature dish is plantain stew."
+    },
+    {
+      "gold": "a1_tariq_job",
+      "id": "a1_tariq_job",
+      "kind": "job",
+      "query": "What is Tariq's profession these days?",
+      "rationale": "query asks for Tariq's job; only a1_tariq_job states it ('tax auditor'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Tariq now works as a tax auditor."
+    },
+    {
+      "gold": "a1_tariq_plant",
+      "id": "a1_tariq_plant",
+      "kind": "plant",
+      "query": "What is Tariq cultivating outdoors?",
+      "rationale": "query asks for Tariq's plant; only a1_tariq_plant states it ('climbing roses'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Tariq is growing climbing roses in the garden."
+    },
+    {
+      "gold": "a1_theo_car",
+      "id": "a1_theo_car",
+      "kind": "car",
+      "query": "Which vehicle did Theo purchase?",
+      "rationale": "query asks for Theo's car; only a1_theo_car states it ('maroon estate car'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Theo bought a maroon estate car last year."
+    },
+    {
+      "gold": "a1_theo_hobby",
+      "id": "a1_theo_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Theo start?",
+      "rationale": "query asks for Theo's hobby; only a1_theo_hobby states it ('pottery'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Theo took up pottery this spring."
+    },
+    {
+      "gold": "a1_theo_instrument",
+      "id": "a1_theo_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Theo play?",
+      "rationale": "query asks for Theo's instrument; only a1_theo_instrument states it ('ukulele'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Theo learned to play the ukulele."
+    },
+    {
+      "gold": "a1_viktor_instrument",
+      "id": "a1_viktor_instrument",
+      "kind": "instrument",
+      "query": "Which musical instrument can Viktor play?",
+      "rationale": "query asks for Viktor's instrument; only a1_viktor_instrument states it ('marimba'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Viktor learned to play the marimba."
+    },
+    {
+      "gold": "a1_yara_hobby",
+      "id": "a1_yara_hobby",
+      "kind": "hobby",
+      "query": "What new pastime did Yara start?",
+      "rationale": "query asks for Yara's hobby; only a1_yara_hobby states it ('rock climbing'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Yara took up rock climbing this spring."
+    },
+    {
+      "gold": "a1_yara_job",
+      "id": "a1_yara_job",
+      "kind": "job",
+      "query": "What is Yara's profession these days?",
+      "rationale": "query asks for Yara's job; only a1_yara_job states it ('wildlife photographer'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Yara now works as a wildlife photographer."
+    },
+    {
+      "gold": "a1_yara_pet",
+      "id": "a1_yara_pet",
+      "kind": "pet",
+      "query": "What kind of animal did Yara take in?",
+      "rationale": "query asks for Yara's pet; only a1_yara_pet states it ('spotted rabbit'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Yara adopted a spotted rabbit as a pet."
+    },
+    {
+      "gold": "a1_zara_car",
+      "id": "a1_zara_car",
+      "kind": "car",
+      "query": "Which vehicle did Zara purchase?",
+      "rationale": "query asks for Zara's car; only a1_zara_car states it ('yellow sports coupe'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Zara bought a yellow sports coupe last year."
+    },
+    {
+      "gold": "a1_zara_city",
+      "id": "a1_zara_city",
+      "kind": "city",
+      "query": "Where did Zara relocate?",
+      "rationale": "query asks for Zara's city; only a1_zara_city states it ('Brisbane'); every fact has a distinct (subject, kind) topic and a distinct detail, so exactly one stored fact answers this query",
+      "text": "Zara moved to Brisbane for work."
+    }
+  ],
+  "judge": "none (closed-form: gold id present in ranked recall list)",
+  "metrics": [
+    "recall@1",
+    "recall@5",
+    "recall@10",
+    "mrr"
+  ],
+  "n": 100,
+  "scoring": "programmatic",
+  "seed": 1337
+}

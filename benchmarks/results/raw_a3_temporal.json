@@ -1,0 +1,632 @@
+{
+  "adapter": "samia",
+  "axis": "a3_temporal",
+  "dataset_version": 1,
+  "detail": {
+    "ordering_per_topic": [
+      {
+        "exact_match": 1,
+        "expected_n": 4,
+        "gold_order": [
+          "a3_residence_00",
+          "a3_residence_01",
+          "a3_residence_02",
+          "a3_residence_03"
+        ],
+        "recovered_n": 4,
+        "recovered_order": [
+          "a3_residence_00",
+          "a3_residence_01",
+          "a3_residence_02",
+          "a3_residence_03"
+        ],
+        "topic": "residence"
+      },
+      {
+        "exact_match": 1,
+        "expected_n": 3,
+        "gold_order": [
+          "a3_phone_00",
+          "a3_phone_01",
+          "a3_phone_02"
+        ],
+        "recovered_n": 3,
+        "recovered_order": [
+          "a3_phone_00",
+          "a3_phone_01",
+          "a3_phone_02"
+        ],
+        "topic": "phone"
+      },
+      {
+        "exact_match": 1,
+        "expected_n": 4,
+        "gold_order": [
+          "a3_job_title_00",
+          "a3_job_title_01",
+          "a3_job_title_02",
+          "a3_job_title_03"
+        ],
+        "recovered_n": 4,
+        "recovered_order": [
+          "a3_job_title_00",
+          "a3_job_title_01",
+          "a3_job_title_02",
+          "a3_job_title_03"
+        ],
+        "topic": "job_title"
+      },
+      {
+        "exact_match": 1,
+        "expected_n": 3,
+        "gold_order": [
+          "a3_car_00",
+          "a3_car_01",
+          "a3_car_02"
+        ],
+        "recovered_n": 3,
+        "recovered_order": [
+          "a3_car_00",
+          "a3_car_01",
+          "a3_car_02"
+        ],
+        "topic": "car"
+      },
+      {
+        "exact_match": 1,
+        "expected_n": 3,
+        "gold_order": [
+          "a3_pet_00",
+          "a3_pet_01",
+          "a3_pet_02"
+        ],
+        "recovered_n": 3,
+        "recovered_order": [
+          "a3_pet_00",
+          "a3_pet_01",
+          "a3_pet_02"
+        ],
+        "topic": "pet"
+      },
+      {
+        "exact_match": 1,
+        "expected_n": 3,
+        "gold_order": [
+          "a3_diet_00",
+          "a3_diet_01",
+          "a3_diet_02"
+        ],
+        "recovered_n": 3,
+        "recovered_order": [
+          "a3_diet_00",
+          "a3_diet_01",
+          "a3_diet_02"
+        ],
+        "topic": "diet"
+      }
+    ],
+    "recall_per_query": [
+      {
+        "as_of": null,
+        "gold": "a3_residence_03",
+        "gold_rank": 1,
+        "id": "a3q_residence_most_recent",
+        "kind": "most_recent",
+        "ranking": [
+          "a3_residence_03",
+          "a3_residence_02",
+          "a3_residence_01",
+          "a3_residence_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "residence"
+      },
+      {
+        "as_of": "2019-05-08",
+        "gold": "a3_residence_00",
+        "gold_rank": 1,
+        "id": "a3q_residence_as_of_00",
+        "kind": "as_of",
+        "ranking": [
+          "a3_residence_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "residence"
+      },
+      {
+        "as_of": "2021-04-28",
+        "gold": "a3_residence_01",
+        "gold_rank": 1,
+        "id": "a3q_residence_as_of_01",
+        "kind": "as_of",
+        "ranking": [
+          "a3_residence_01",
+          "a3_residence_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "residence"
+      },
+      {
+        "as_of": "2023-05-25",
+        "gold": "a3_residence_02",
+        "gold_rank": 1,
+        "id": "a3q_residence_as_of_02",
+        "kind": "as_of",
+        "ranking": [
+          "a3_residence_02",
+          "a3_residence_01",
+          "a3_residence_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "residence"
+      },
+      {
+        "as_of": null,
+        "gold": "a3_phone_02",
+        "gold_rank": 1,
+        "id": "a3q_phone_most_recent",
+        "kind": "most_recent",
+        "ranking": [
+          "a3_phone_02",
+          "a3_phone_01",
+          "a3_phone_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "phone"
+      },
+      {
+        "as_of": "2020-06-11",
+        "gold": "a3_phone_00",
+        "gold_rank": 1,
+        "id": "a3q_phone_as_of_00",
+        "kind": "as_of",
+        "ranking": [
+          "a3_phone_00",
+          "a3_car_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "phone"
+      },
+      {
+        "as_of": "2022-10-22",
+        "gold": "a3_phone_01",
+        "gold_rank": 1,
+        "id": "a3q_phone_as_of_01",
+        "kind": "as_of",
+        "ranking": [
+          "a3_phone_01",
+          "a3_phone_00",
+          "a3_car_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "phone"
+      },
+      {
+        "as_of": null,
+        "gold": "a3_job_title_03",
+        "gold_rank": 1,
+        "id": "a3q_job_title_most_recent",
+        "kind": "most_recent",
+        "ranking": [
+          "a3_job_title_03",
+          "a3_job_title_02",
+          "a3_job_title_01",
+          "a3_job_title_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "job_title"
+      },
+      {
+        "as_of": "2018-07-24",
+        "gold": "a3_job_title_00",
+        "gold_rank": 1,
+        "id": "a3q_job_title_as_of_00",
+        "kind": "as_of",
+        "ranking": [
+          "a3_job_title_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "job_title"
+      },
+      {
+        "as_of": "2020-12-22",
+        "gold": "a3_job_title_01",
+        "gold_rank": 1,
+        "id": "a3q_job_title_as_of_01",
+        "kind": "as_of",
+        "ranking": [
+          "a3_job_title_01",
+          "a3_job_title_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "job_title"
+      },
+      {
+        "as_of": "2023-08-21",
+        "gold": "a3_job_title_02",
+        "gold_rank": 1,
+        "id": "a3q_job_title_as_of_02",
+        "kind": "as_of",
+        "ranking": [
+          "a3_job_title_02",
+          "a3_job_title_01",
+          "a3_job_title_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "job_title"
+      },
+      {
+        "as_of": null,
+        "gold": "a3_car_02",
+        "gold_rank": 1,
+        "id": "a3q_car_most_recent",
+        "kind": "most_recent",
+        "ranking": [
+          "a3_car_02",
+          "a3_car_01",
+          "a3_car_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "car"
+      },
+      {
+        "as_of": "2018-08-21",
+        "gold": "a3_car_00",
+        "gold_rank": 1,
+        "id": "a3q_car_as_of_00",
+        "kind": "as_of",
+        "ranking": [
+          "a3_car_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "car"
+      },
+      {
+        "as_of": "2022-07-27",
+        "gold": "a3_car_01",
+        "gold_rank": 1,
+        "id": "a3q_car_as_of_01",
+        "kind": "as_of",
+        "ranking": [
+          "a3_car_01",
+          "a3_car_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "car"
+      },
+      {
+        "as_of": null,
+        "gold": "a3_pet_02",
+        "gold_rank": 1,
+        "id": "a3q_pet_most_recent",
+        "kind": "most_recent",
+        "ranking": [
+          "a3_pet_02",
+          "a3_pet_01",
+          "a3_pet_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "pet"
+      },
+      {
+        "as_of": "2019-12-03",
+        "gold": "a3_pet_00",
+        "gold_rank": 1,
+        "id": "a3q_pet_as_of_00",
+        "kind": "as_of",
+        "ranking": [
+          "a3_pet_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "pet"
+      },
+      {
+        "as_of": "2022-05-24",
+        "gold": "a3_pet_01",
+        "gold_rank": 1,
+        "id": "a3q_pet_as_of_01",
+        "kind": "as_of",
+        "ranking": [
+          "a3_pet_01",
+          "a3_pet_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "pet"
+      },
+      {
+        "as_of": null,
+        "gold": "a3_diet_02",
+        "gold_rank": 1,
+        "id": "a3q_diet_most_recent",
+        "kind": "most_recent",
+        "ranking": [
+          "a3_diet_02",
+          "a3_diet_01",
+          "a3_diet_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "diet"
+      },
+      {
+        "as_of": "2020-04-08",
+        "gold": "a3_diet_00",
+        "gold_rank": 1,
+        "id": "a3q_diet_as_of_00",
+        "kind": "as_of",
+        "ranking": [
+          "a3_diet_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "diet"
+      },
+      {
+        "as_of": "2022-09-25",
+        "gold": "a3_diet_01",
+        "gold_rank": 1,
+        "id": "a3q_diet_as_of_01",
+        "kind": "as_of",
+        "ranking": [
+          "a3_diet_01",
+          "a3_diet_00"
+        ],
+        "recall_at": {
+          "1": 1,
+          "3": 1,
+          "5": 1
+        },
+        "rr": 1.0,
+        "topic": "diet"
+      }
+    ]
+  },
+  "metrics": {
+    "ordering_acc": 1.0,
+    "temporal_recall": {
+      "mrr": 1.0,
+      "n": 20,
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "recall@5": 1.0
+    },
+    "temporal_recall_by_kind": {
+      "as_of": {
+        "mrr": 1.0,
+        "n": 14,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0
+      },
+      "most_recent": {
+        "mrr": 1.0,
+        "n": 6,
+        "recall@1": 1.0,
+        "recall@3": 1.0,
+        "recall@5": 1.0
+      }
+    }
+  },
+  "n_items": 20,
+  "n_queries": 20,
+  "open_ended_judge": {
+    "note": "Pinned-judge subset emitted as an auditable transcript; not scored in this deterministic run (no local judge backend invoked at score time). Programmatic gold-id metrics above are the trustworthy A3 numbers.",
+    "scored": false,
+    "status": "available_not_run",
+    "subset": [
+      {
+        "gold_id": "a3_residence_03",
+        "gold_text": "I settled in Seattle.",
+        "judge_grade": null,
+        "phrasing": "Right now, what is the city the speaker lives in?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: Right now, what is the city the speaker lives in?\nCorrect answer (gold fact): I settled in Seattle.\nSystem's top candidate: I settled in Seattle.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_residence_most_recent",
+        "system_top_id": "a3_residence_03",
+        "system_top_text": "I settled in Seattle."
+      },
+      {
+        "gold_id": "a3_residence_03",
+        "gold_text": "I settled in Seattle.",
+        "judge_grade": null,
+        "phrasing": "What is the speaker's current city?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: What is the speaker's current city?\nCorrect answer (gold fact): I settled in Seattle.\nSystem's top candidate: I settled in Seattle.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_residence_most_recent",
+        "system_top_id": "a3_residence_03",
+        "system_top_text": "I settled in Seattle."
+      },
+      {
+        "gold_id": "a3_phone_02",
+        "gold_text": "My phone is now a Pixel 8.",
+        "judge_grade": null,
+        "phrasing": "Right now, what is the phone the speaker carries?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: Right now, what is the phone the speaker carries?\nCorrect answer (gold fact): My phone is now a Pixel 8.\nSystem's top candidate: My phone is now a Pixel 8.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_phone_most_recent",
+        "system_top_id": "a3_phone_02",
+        "system_top_text": "My phone is now a Pixel 8."
+      },
+      {
+        "gold_id": "a3_phone_02",
+        "gold_text": "My phone is now a Pixel 8.",
+        "judge_grade": null,
+        "phrasing": "What is the speaker's current phone?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: What is the speaker's current phone?\nCorrect answer (gold fact): My phone is now a Pixel 8.\nSystem's top candidate: My phone is now a Pixel 8.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_phone_most_recent",
+        "system_top_id": "a3_phone_02",
+        "system_top_text": "My phone is now a Pixel 8."
+      },
+      {
+        "gold_id": "a3_job_title_03",
+        "gold_text": "I took a role as engineering manager.",
+        "judge_grade": null,
+        "phrasing": "Right now, what is the job title the speaker holds?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: Right now, what is the job title the speaker holds?\nCorrect answer (gold fact): I took a role as engineering manager.\nSystem's top candidate: I took a role as engineering manager.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_job_title_most_recent",
+        "system_top_id": "a3_job_title_03",
+        "system_top_text": "I took a role as engineering manager."
+      },
+      {
+        "gold_id": "a3_job_title_03",
+        "gold_text": "I took a role as engineering manager.",
+        "judge_grade": null,
+        "phrasing": "What is the speaker's current job title?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: What is the speaker's current job title?\nCorrect answer (gold fact): I took a role as engineering manager.\nSystem's top candidate: I took a role as engineering manager.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_job_title_most_recent",
+        "system_top_id": "a3_job_title_03",
+        "system_top_text": "I took a role as engineering manager."
+      },
+      {
+        "gold_id": "a3_car_02",
+        "gold_text": "I now drive a blue Toyota RAV4.",
+        "judge_grade": null,
+        "phrasing": "Right now, what is the car the speaker drives?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: Right now, what is the car the speaker drives?\nCorrect answer (gold fact): I now drive a blue Toyota RAV4.\nSystem's top candidate: I now drive a blue Toyota RAV4.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_car_most_recent",
+        "system_top_id": "a3_car_02",
+        "system_top_text": "I now drive a blue Toyota RAV4."
+      },
+      {
+        "gold_id": "a3_car_02",
+        "gold_text": "I now drive a blue Toyota RAV4.",
+        "judge_grade": null,
+        "phrasing": "What is the speaker's current car?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: What is the speaker's current car?\nCorrect answer (gold fact): I now drive a blue Toyota RAV4.\nSystem's top candidate: I now drive a blue Toyota RAV4.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_car_most_recent",
+        "system_top_id": "a3_car_02",
+        "system_top_text": "I now drive a blue Toyota RAV4."
+      },
+      {
+        "gold_id": "a3_pet_02",
+        "gold_text": "I got a parrot named Mango.",
+        "judge_grade": null,
+        "phrasing": "Right now, what is the pet the speaker keeps?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: Right now, what is the pet the speaker keeps?\nCorrect answer (gold fact): I got a parrot named Mango.\nSystem's top candidate: I got a parrot named Mango.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_pet_most_recent",
+        "system_top_id": "a3_pet_02",
+        "system_top_text": "I got a parrot named Mango."
+      },
+      {
+        "gold_id": "a3_pet_02",
+        "gold_text": "I got a parrot named Mango.",
+        "judge_grade": null,
+        "phrasing": "What is the speaker's current pet?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: What is the speaker's current pet?\nCorrect answer (gold fact): I got a parrot named Mango.\nSystem's top candidate: I got a parrot named Mango.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_pet_most_recent",
+        "system_top_id": "a3_pet_02",
+        "system_top_text": "I got a parrot named Mango."
+      },
+      {
+        "gold_id": "a3_diet_02",
+        "gold_text": "I went fully vegan.",
+        "judge_grade": null,
+        "phrasing": "Right now, what is the diet the speaker follows?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: Right now, what is the diet the speaker follows?\nCorrect answer (gold fact): I went fully vegan.\nSystem's top candidate: I went fully vegan.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_diet_most_recent",
+        "system_top_id": "a3_diet_02",
+        "system_top_text": "I went fully vegan."
+      },
+      {
+        "gold_id": "a3_diet_02",
+        "gold_text": "I went fully vegan.",
+        "judge_grade": null,
+        "phrasing": "What is the speaker's current diet?",
+        "prompt": "You are a strict grader for a memory benchmark. A user asked a TEMPORAL question and the memory system returned candidate facts ranked most-recent first. Decide whether the system's TOP answer is the correct, time-appropriate one.\n\nQuestion: What is the speaker's current diet?\nCorrect answer (gold fact): I went fully vegan.\nSystem's top candidate: I went fully vegan.\n\nReply with exactly one line: 'GRADE: correct' or 'GRADE: incorrect'.",
+        "query_id": "a3q_diet_most_recent",
+        "system_top_id": "a3_diet_02",
+        "system_top_text": "I went fully vegan."
+      }
+    ]
+  }
+}

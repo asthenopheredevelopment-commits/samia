@@ -1,0 +1,17 @@
+{
+  "adapter": "samia",
+  "axis": "a1_retrieval",
+  "dataset_sha256": "472709908c182064a2e450c7d5339a9d8e61673ee9d34a2c2234cd2444b756cf",
+  "judge_applied": false,
+  "metrics": {
+    "mrr": 0.97,
+    "n": 100,
+    "recall@1": 0.95,
+    "recall@10": 1.0,
+    "recall@5": 1.0
+  },
+  "n": 100,
+  "recall_k": 10,
+  "scoring": "programmatic (gold id position in ranked recall list)",
+  "seed": 1337
+}

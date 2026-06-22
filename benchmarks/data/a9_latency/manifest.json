@@ -1,0 +1,33 @@
+{
+  "alignment": "facts.jsonl line i and probes.jsonl line i share a gold id",
+  "axis": "a9_latency",
+  "description": "Latency/scale: store->recall wall-clock at three store sizes.",
+  "embedder": "sentence-transformers/all-MiniLM-L6-v2 (384-d, CPU, cache-only)",
+  "fact_gold_fields": [
+    "subject",
+    "attribute",
+    "value"
+  ],
+  "fact_shape": [
+    "id",
+    "text",
+    "valid_from",
+    "source"
+  ],
+  "n_facts": 10000,
+  "n_probes": 10000,
+  "probe_shape": [
+    "id",
+    "query",
+    "gold",
+    "rationale"
+  ],
+  "scoring": "wall-clock only (p50/p95 recall ms, ingest items/s); no judge",
+  "seed": 1337,
+  "size_semantics": "each size N uses the first N lines of facts.jsonl",
+  "sizes": [
+    100,
+    1000,
+    10000
+  ]
+}

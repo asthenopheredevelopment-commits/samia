@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "axis": "a2_retention",
+  "seed": 1337,
+  "k_values": [
+    1,
+    5,
+    10
+  ],
+  "delay_ticks": [
+    5,
+    10,
+    20,
+    40
+  ],
+  "salient_salience": 1.0,
+  "noise_salience": 0.0,
+  "description": "A2 retention/forgetting corpus: a few high-salience salient facts (each with one gold probe) plus a larger field of zero-salience noise facts. The task ages the store and runs the real relevance-decay pass for each delay in delay_ticks, then re-queries the salient probes. retention@delay is the fraction of salient golds still recallable in top-k; noise-drop is the fraction of noise atoms the forgetting curve evicted. Separate data from A1 (retrieval) \u2014 defect D6. Programmatic scoring on the id ranking; no judge.",
+  "item_count": 24,
+  "salient_count": 6,
+  "noise_count": 18,
+  "probe_count": 6,
+  "salient_ids": [
+    "salient_allergy",
+    "salient_safe_code",
+    "salient_emergency_contact",
+    "salient_blood_type",
+    "salient_will_location",
+    "salient_mortgage_rate"
+  ],
+  "noise_ids": [
+    "noise_weather_tue",
+    "noise_lunch_sandwich",
+    "noise_bus_late",
+    "noise_umbrella",
+    "noise_printer_paper",
+    "noise_coffee_queue",
+    "noise_elevator_music",
+    "noise_parking_spot",
+    "noise_plant_watered",
+    "noise_pen_blue",
+    "noise_window_open",
+    "noise_mail_flyer",
+    "noise_dishwasher",
+    "noise_stairs_count",
+    "noise_clock_slow",
+    "noise_socks_mismatch",
+    "noise_tea_kettle",
+    "noise_doormat"
+  ],
+  "items": [
+    {
+      "id": "noise_parking_spot",
+      "text": "I parked in spot B14 instead of my usual B07 on Thursday.",
+      "valid_from": "2023-01-10",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_bus_late",
+      "text": "The number 12 bus arrived four minutes late this morning.",
+      "valid_from": "2023-01-05",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "salient_emergency_contact",
+      "text": "My emergency contact is my sister Nadia, reachable at the lakeside clinic.",
+      "valid_from": "2022-07-09",
+      "source": "medical_intake",
+      "trusted": true,
+      "kind": "salient",
+      "salience": 1.0
+    },
+    {
+      "id": "salient_allergy",
+      "text": "I am severely allergic to penicillin and carry an epinephrine auto-injector.",
+      "valid_from": "2022-03-04",
+      "source": "medical_intake",
+      "trusted": true,
+      "kind": "salient",
+      "salience": 1.0
+    },
+    {
+      "id": "noise_tea_kettle",
+      "text": "The kettle took a little longer than usual to whistle.",
+      "valid_from": "2023-01-19",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_umbrella",
+      "text": "Someone left a green umbrella by the office front door.",
+      "valid_from": "2023-01-06",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_lunch_sandwich",
+      "text": "I had a turkey sandwich for lunch at the corner deli.",
+      "valid_from": "2023-01-04",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_window_open",
+      "text": "I left the kitchen window cracked open to air out the room.",
+      "valid_from": "2023-01-13",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "salient_safe_code",
+      "text": "The combination to the home safe is set to my late father's birth year, 1947.",
+      "valid_from": "2021-11-20",
+      "source": "household_record",
+      "trusted": true,
+      "kind": "salient",
+      "salience": 1.0
+    },
+    {
+      "id": "noise_doormat",
+      "text": "The doormat was flipped over by the wind overnight.",
+      "valid_from": "2023-01-20",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "salient_blood_type",
+      "text": "My blood type is O negative, which the transfusion clinic flagged as universal donor.",
+      "valid_from": "2020-05-15",
+      "source": "medical_intake",
+      "trusted": true,
+      "kind": "salient",
+      "salience": 1.0
+    },
+    {
+      "id": "noise_pen_blue",
+      "text": "The blue pen on my desk finally ran dry mid-meeting.",
+      "valid_from": "2023-01-12",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_weather_tue",
+      "text": "The weather was mild and overcast on Tuesday afternoon.",
+      "valid_from": "2023-01-03",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "salient_will_location",
+      "text": "My signed will is stored in the safety deposit box at the Harbor Street branch.",
+      "valid_from": "2021-02-28",
+      "source": "legal_record",
+      "trusted": true,
+      "kind": "salient",
+      "salience": 1.0
+    },
+    {
+      "id": "noise_plant_watered",
+      "text": "I watered the desk fern on the way out Friday evening.",
+      "valid_from": "2023-01-11",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_socks_mismatch",
+      "text": "I wore one navy and one black sock by accident on Monday.",
+      "valid_from": "2023-01-18",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_elevator_music",
+      "text": "They changed the elevator music to soft jazz this week.",
+      "valid_from": "2023-01-09",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_printer_paper",
+      "text": "The third-floor printer ran out of paper again before noon.",
+      "valid_from": "2023-01-07",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "salient_mortgage_rate",
+      "text": "I locked my mortgage at a fixed rate of 3.1 percent for thirty years.",
+      "valid_from": "2022-09-01",
+      "source": "financial_record",
+      "trusted": true,
+      "kind": "salient",
+      "salience": 1.0
+    },
+    {
+      "id": "noise_clock_slow",
+      "text": "The kitchen wall clock was running two minutes slow.",
+      "valid_from": "2023-01-17",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_dishwasher",
+      "text": "I ran the dishwasher on the short cycle after dinner.",
+      "valid_from": "2023-01-15",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_coffee_queue",
+      "text": "The coffee queue downstairs was unusually short today.",
+      "valid_from": "2023-01-08",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_mail_flyer",
+      "text": "A flyer for a new pizza place showed up in the mailbox.",
+      "valid_from": "2023-01-14",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    },
+    {
+      "id": "noise_stairs_count",
+      "text": "There are forty-two steps from the lobby to my floor.",
+      "valid_from": "2023-01-16",
+      "source": "diary",
+      "trusted": true,
+      "kind": "noise",
+      "salience": 0.0
+    }
+  ],
+  "probes": [
+    {
+      "probe": "What medication am I severely allergic to?",
+      "gold_id": "salient_allergy",
+      "kind": "salient"
+    },
+    {
+      "probe": "What is the home safe combination set to?",
+      "gold_id": "salient_safe_code",
+      "kind": "salient"
+    },
+    {
+      "probe": "Who is listed as my emergency contact?",
+      "gold_id": "salient_emergency_contact",
+      "kind": "salient"
+    },
+    {
+      "probe": "What is my blood type?",
+      "gold_id": "salient_blood_type",
+      "kind": "salient"
+    },
+    {
+      "probe": "Where is my signed will stored?",
+      "gold_id": "salient_will_location",
+      "kind": "salient"
+    },
+    {
+      "probe": "What fixed rate did I lock my mortgage at?",
+      "gold_id": "salient_mortgage_rate",
+      "kind": "salient"
+    }
+  ]
+}

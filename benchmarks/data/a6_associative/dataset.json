@@ -1,0 +1,400 @@
+{
+  "schema_version": 1,
+  "axis": "a6_associative",
+  "seed": 1337,
+  "k_values": [
+    1,
+    3,
+    5,
+    10
+  ],
+  "coactivations_per_edge": 3,
+  "description": "A6 associative / multi-hop corpus: linked chains a->b->c (and a->b->c->d) seeded into the Hebbian co-activation graph by co-activating ONLY adjacent atoms. The query is the chain head; the gold answer is the chain tail, which is reachable only transitively through the middle node(s). Chain atoms are on distinct sub-topics so head<->tail vector similarity is low and the score is attributable to the multi-hop graph walk, not single-vector similarity. Distractor chains and isolated noise atoms widen the candidate pool. Each probe has exactly one gold id, so scoring is fully programmatic (no judge).",
+  "item_count": 25,
+  "probe_count": 6,
+  "chain_count": 6,
+  "edge_count": 14,
+  "noise_count": 5,
+  "items": [
+    {
+      "id": "rail_mid1",
+      "text": "A kingfisher started nesting in the cutting beyond the water tower.",
+      "valid_from": "",
+      "source": "chain_railway",
+      "trusted": true,
+      "chain": "chain_railway",
+      "role": "middle",
+      "position": 1
+    },
+    {
+      "id": "obs_tail",
+      "text": "The visitor center printed a new fold-out chart of winter constellations.",
+      "valid_from": "",
+      "source": "chain_observatory",
+      "trusted": true,
+      "chain": "chain_observatory",
+      "role": "tail",
+      "position": 2
+    },
+    {
+      "id": "orch_tail",
+      "text": "The county fair awarded a blue ribbon for the spiced apple butter.",
+      "valid_from": "",
+      "source": "chain_orchard",
+      "trusted": true,
+      "chain": "chain_orchard",
+      "role": "tail",
+      "position": 2
+    },
+    {
+      "id": "orch_head",
+      "text": "Wendell planted a new row of apple saplings along the north fence.",
+      "valid_from": "",
+      "source": "chain_orchard",
+      "trusted": true,
+      "chain": "chain_orchard",
+      "role": "head",
+      "position": 0
+    },
+    {
+      "id": "noise_aquifer",
+      "text": "The town drilled a monitoring well to track the chalk aquifer level.",
+      "valid_from": "",
+      "source": "noise",
+      "trusted": true,
+      "chain": null,
+      "role": "noise",
+      "position": -1
+    },
+    {
+      "id": "bake_head",
+      "text": "Imani switched the morning loaves to a long overnight cold ferment.",
+      "valid_from": "",
+      "source": "chain_bakery",
+      "trusted": true,
+      "chain": "chain_bakery",
+      "role": "head",
+      "position": 0
+    },
+    {
+      "id": "obs_mid",
+      "text": "A late frost cracked two paving stones on the dome's access ramp.",
+      "valid_from": "",
+      "source": "chain_observatory",
+      "trusted": true,
+      "chain": "chain_observatory",
+      "role": "middle",
+      "position": 1
+    },
+    {
+      "id": "vine_head",
+      "text": "Pilar retrained the cordon wires on the upper terrace block.",
+      "valid_from": "",
+      "source": "chain_vineyard",
+      "trusted": true,
+      "chain": "chain_vineyard",
+      "role": "head",
+      "position": 0
+    },
+    {
+      "id": "orch_mid",
+      "text": "A barn owl moved into the nesting box above the cider press shed.",
+      "valid_from": "",
+      "source": "chain_orchard",
+      "trusted": true,
+      "chain": "chain_orchard",
+      "role": "middle",
+      "position": 1
+    },
+    {
+      "id": "noise_carillon",
+      "text": "The cathedral carillon gained a recast bourdon bell this spring.",
+      "valid_from": "",
+      "source": "noise",
+      "trusted": true,
+      "chain": null,
+      "role": "noise",
+      "position": -1
+    },
+    {
+      "id": "harb_head",
+      "text": "Nadia repaired the wooden gangway on the eastern jetty.",
+      "valid_from": "",
+      "source": "chain_harbor",
+      "trusted": true,
+      "chain": "chain_harbor",
+      "role": "head",
+      "position": 0
+    },
+    {
+      "id": "rail_tail",
+      "text": "The gift shop began selling enamel pin badges of the green tank engine.",
+      "valid_from": "",
+      "source": "chain_railway",
+      "trusted": true,
+      "chain": "chain_railway",
+      "role": "tail",
+      "position": 3
+    },
+    {
+      "id": "obs_head",
+      "text": "Theo recalibrated the equatorial mount on the twelve-inch refractor.",
+      "valid_from": "",
+      "source": "chain_observatory",
+      "trusted": true,
+      "chain": "chain_observatory",
+      "role": "head",
+      "position": 0
+    },
+    {
+      "id": "harb_mid",
+      "text": "A pod of seals began hauling out on the breakwater at low tide.",
+      "valid_from": "",
+      "source": "chain_harbor",
+      "trusted": true,
+      "chain": "chain_harbor",
+      "role": "middle",
+      "position": 1
+    },
+    {
+      "id": "rail_mid2",
+      "text": "The signal box got a refurbished lever frame from a closed branch line.",
+      "valid_from": "",
+      "source": "chain_railway",
+      "trusted": true,
+      "chain": "chain_railway",
+      "role": "middle",
+      "position": 2
+    },
+    {
+      "id": "noise_glacier",
+      "text": "A research team logged the retreat of the valley glacier's snout.",
+      "valid_from": "",
+      "source": "noise",
+      "trusted": true,
+      "chain": null,
+      "role": "noise",
+      "position": -1
+    },
+    {
+      "id": "rail_head",
+      "text": "Gus regauged the turntable bearings at the engine shed.",
+      "valid_from": "",
+      "source": "chain_railway",
+      "trusted": true,
+      "chain": "chain_railway",
+      "role": "head",
+      "position": 0
+    },
+    {
+      "id": "bake_mid",
+      "text": "A coppersmith re-tinned the big jam kettle in the back kitchen.",
+      "valid_from": "",
+      "source": "chain_bakery",
+      "trusted": true,
+      "chain": "chain_bakery",
+      "role": "middle",
+      "position": 1
+    },
+    {
+      "id": "harb_tail",
+      "text": "The chandlery started stocking hand-spliced manila mooring lines.",
+      "valid_from": "",
+      "source": "chain_harbor",
+      "trusted": true,
+      "chain": "chain_harbor",
+      "role": "tail",
+      "position": 2
+    },
+    {
+      "id": "noise_kiln",
+      "text": "Rashida fired a batch of celadon glaze tiles in the wood kiln.",
+      "valid_from": "",
+      "source": "noise",
+      "trusted": true,
+      "chain": null,
+      "role": "noise",
+      "position": -1
+    },
+    {
+      "id": "vine_mid2",
+      "text": "The cooperage delivered four new toasted oak barrels for the reserve.",
+      "valid_from": "",
+      "source": "chain_vineyard",
+      "trusted": true,
+      "chain": "chain_vineyard",
+      "role": "middle",
+      "position": 2
+    },
+    {
+      "id": "bake_tail",
+      "text": "The Saturday market stall sold out of the cardamom plum tarts by nine.",
+      "valid_from": "",
+      "source": "chain_bakery",
+      "trusted": true,
+      "chain": "chain_bakery",
+      "role": "tail",
+      "position": 2
+    },
+    {
+      "id": "noise_loom",
+      "text": "Bjorn warped the floor loom for a run of herringbone scarves.",
+      "valid_from": "",
+      "source": "noise",
+      "trusted": true,
+      "chain": null,
+      "role": "noise",
+      "position": -1
+    },
+    {
+      "id": "vine_mid1",
+      "text": "A family of hedgehogs took up residence under the press house steps.",
+      "valid_from": "",
+      "source": "chain_vineyard",
+      "trusted": true,
+      "chain": "chain_vineyard",
+      "role": "middle",
+      "position": 1
+    },
+    {
+      "id": "vine_tail",
+      "text": "The tasting room introduced a dry rose poured from a stoneware carafe.",
+      "valid_from": "",
+      "source": "chain_vineyard",
+      "trusted": true,
+      "chain": "chain_vineyard",
+      "role": "tail",
+      "position": 3
+    }
+  ],
+  "edges": [
+    {
+      "chain": "chain_orchard",
+      "from": "orch_head",
+      "to": "orch_mid"
+    },
+    {
+      "chain": "chain_orchard",
+      "from": "orch_mid",
+      "to": "orch_tail"
+    },
+    {
+      "chain": "chain_harbor",
+      "from": "harb_head",
+      "to": "harb_mid"
+    },
+    {
+      "chain": "chain_harbor",
+      "from": "harb_mid",
+      "to": "harb_tail"
+    },
+    {
+      "chain": "chain_observatory",
+      "from": "obs_head",
+      "to": "obs_mid"
+    },
+    {
+      "chain": "chain_observatory",
+      "from": "obs_mid",
+      "to": "obs_tail"
+    },
+    {
+      "chain": "chain_bakery",
+      "from": "bake_head",
+      "to": "bake_mid"
+    },
+    {
+      "chain": "chain_bakery",
+      "from": "bake_mid",
+      "to": "bake_tail"
+    },
+    {
+      "chain": "chain_railway",
+      "from": "rail_head",
+      "to": "rail_mid1"
+    },
+    {
+      "chain": "chain_railway",
+      "from": "rail_mid1",
+      "to": "rail_mid2"
+    },
+    {
+      "chain": "chain_railway",
+      "from": "rail_mid2",
+      "to": "rail_tail"
+    },
+    {
+      "chain": "chain_vineyard",
+      "from": "vine_head",
+      "to": "vine_mid1"
+    },
+    {
+      "chain": "chain_vineyard",
+      "from": "vine_mid1",
+      "to": "vine_mid2"
+    },
+    {
+      "chain": "chain_vineyard",
+      "from": "vine_mid2",
+      "to": "vine_tail"
+    }
+  ],
+  "probes": [
+    {
+      "probe_node": "orch_head",
+      "gold_id": "orch_tail",
+      "chain": "chain_orchard",
+      "middles": [
+        "orch_mid"
+      ],
+      "hops": 2
+    },
+    {
+      "probe_node": "harb_head",
+      "gold_id": "harb_tail",
+      "chain": "chain_harbor",
+      "middles": [
+        "harb_mid"
+      ],
+      "hops": 2
+    },
+    {
+      "probe_node": "obs_head",
+      "gold_id": "obs_tail",
+      "chain": "chain_observatory",
+      "middles": [
+        "obs_mid"
+      ],
+      "hops": 2
+    },
+    {
+      "probe_node": "bake_head",
+      "gold_id": "bake_tail",
+      "chain": "chain_bakery",
+      "middles": [
+        "bake_mid"
+      ],
+      "hops": 2
+    },
+    {
+      "probe_node": "rail_head",
+      "gold_id": "rail_tail",
+      "chain": "chain_railway",
+      "middles": [
+        "rail_mid1",
+        "rail_mid2"
+      ],
+      "hops": 3
+    },
+    {
+      "probe_node": "vine_head",
+      "gold_id": "vine_tail",
+      "chain": "chain_vineyard",
+      "middles": [
+        "vine_mid1",
+        "vine_mid2"
+      ],
+      "hops": 3
+    }
+  ]
+}

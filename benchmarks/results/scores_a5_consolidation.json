@@ -1,0 +1,43 @@
+{
+  "axis": "a5_consolidation",
+  "adapter": "samia",
+  "schema_version": 1,
+  "seed": 1337,
+  "k_values": [
+    1,
+    5,
+    10
+  ],
+  "item_count": 16,
+  "probe_count": 12,
+  "cluster_count": 4,
+  "consolidate_summary": {
+    "adapter": "samia",
+    "judge_applied": false,
+    "candidate_merges": 0
+  },
+  "delta_recall_at_k": {
+    "1": 0.0,
+    "5": 0.0,
+    "10": 0.0
+  },
+  "before": {
+    "recall_at_k": {
+      "1": 0.9166666666666666,
+      "5": 1.0,
+      "10": 1.0
+    },
+    "mrr": 0.9583333333333334
+  },
+  "after": {
+    "recall_at_k": {
+      "1": 0.9166666666666666,
+      "5": 1.0,
+      "10": 1.0
+    },
+    "mrr": 0.9583333333333334
+  },
+  "judge_applied": false,
+  "judge_gated_merge_measured": false,
+  "consolidation_gain_caveat": "Delta recall measures the consolidation pass available WITHOUT the REM judge (programmatic audit + index rebuild). The judge-gated atom merge is an offline LLM step out of scope for a deterministic, network-free run, so the end-to-end consolidation gain is NOT measured here. A recall-neutral Delta (~0) is the honest expected result; no lift is fabricated."
+}

@@ -1,0 +1,218 @@
+{
+  "schema_version": 1,
+  "axis": "a5_consolidation",
+  "seed": 1337,
+  "k_values": [
+    1,
+    5,
+    10
+  ],
+  "description": "A5 consolidation-gain corpus: clean unambiguous facts plus authored near-duplicate clusters. recall@k is scored BEFORE and AFTER a consolidation cycle; the metric is Delta recall. Each probe has exactly one gold id (canonical for clusters), so scoring is programmatic.",
+  "item_count": 16,
+  "probe_count": 12,
+  "cluster_count": 4,
+  "items": [
+    {
+      "id": "dup_summit_2",
+      "text": "In autumn the climbing club reached the top of Mount Aria.",
+      "valid_from": "2022-10-19",
+      "source": "session_n",
+      "trusted": true,
+      "cluster": "clu_summit"
+    },
+    {
+      "id": "fact_canoe",
+      "text": "Diego carved a cedar canoe and paddled it across the lake.",
+      "valid_from": "2022-09-22",
+      "source": "session_h",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "fact_telescope",
+      "text": "Lena assembled a reflecting telescope in her garage over the winter.",
+      "valid_from": "2022-12-10",
+      "source": "session_a",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "dup_summit_1",
+      "text": "The climbing club summited Mount Aria in the autumn expedition.",
+      "valid_from": "2022-10-11",
+      "source": "session_m",
+      "trusted": true,
+      "cluster": "clu_summit"
+    },
+    {
+      "id": "fact_marathon",
+      "text": "Marcus finished the coastal marathon in just under four hours.",
+      "valid_from": "2023-05-21",
+      "source": "session_b",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "dup_apartment_1",
+      "text": "Priya relocated to Lisbon to start a job as a backend engineer.",
+      "valid_from": "2023-01-09",
+      "source": "session_i",
+      "trusted": true,
+      "cluster": "clu_apartment"
+    },
+    {
+      "id": "fact_violin",
+      "text": "Sofia restrung her grandmother's violin before the recital.",
+      "valid_from": "2023-03-30",
+      "source": "session_d",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "fact_greenhouse",
+      "text": "Omar grows heirloom tomatoes in a small backyard greenhouse.",
+      "valid_from": "2022-08-05",
+      "source": "session_e",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "dup_puppy_1",
+      "text": "The Alvarez family adopted a border collie puppy named Comet.",
+      "valid_from": "2023-03-02",
+      "source": "session_k",
+      "trusted": true,
+      "cluster": "clu_puppy"
+    },
+    {
+      "id": "fact_chess",
+      "text": "Yuki won the regional chess tournament with a queen sacrifice.",
+      "valid_from": "2023-04-18",
+      "source": "session_g",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "fact_lighthouse",
+      "text": "The old harbor lighthouse was repainted with red and white stripes.",
+      "valid_from": "2023-06-01",
+      "source": "session_f",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "fact_bakery",
+      "text": "The corner bakery switched to a sourdough starter named Hank.",
+      "valid_from": "2023-02-14",
+      "source": "session_c",
+      "trusted": true,
+      "cluster": null
+    },
+    {
+      "id": "dup_novel_2",
+      "text": "Hana completed her first novel, which she named Tidewater.",
+      "valid_from": "2023-03-04",
+      "source": "session_p",
+      "trusted": true,
+      "cluster": "clu_novel"
+    },
+    {
+      "id": "dup_novel_1",
+      "text": "Hana finished writing her debut novel titled Tidewater.",
+      "valid_from": "2023-02-25",
+      "source": "session_o",
+      "trusted": true,
+      "cluster": "clu_novel"
+    },
+    {
+      "id": "dup_apartment_2",
+      "text": "Priya moved to Lisbon for a new backend engineering position.",
+      "valid_from": "2023-01-15",
+      "source": "session_j",
+      "trusted": true,
+      "cluster": "clu_apartment"
+    },
+    {
+      "id": "dup_puppy_2",
+      "text": "The Alvarez household took in a border collie pup they call Comet.",
+      "valid_from": "2023-03-08",
+      "source": "session_l",
+      "trusted": true,
+      "cluster": "clu_puppy"
+    }
+  ],
+  "probes": [
+    {
+      "probe": "What did Lena build during the winter?",
+      "gold_id": "fact_telescope",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "How long did Marcus take to run the coastal marathon?",
+      "gold_id": "fact_marathon",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "What did the corner bakery name its sourdough starter?",
+      "gold_id": "fact_bakery",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "Whose violin did Sofia restring?",
+      "gold_id": "fact_violin",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "Where does Omar grow his heirloom tomatoes?",
+      "gold_id": "fact_greenhouse",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "What colors was the harbor lighthouse repainted?",
+      "gold_id": "fact_lighthouse",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "How did Yuki win the regional chess tournament?",
+      "gold_id": "fact_chess",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "What kind of wood did Diego use for his canoe?",
+      "gold_id": "fact_canoe",
+      "cluster": null,
+      "kind": "singleton"
+    },
+    {
+      "probe": "Which city did Priya move to for her new job?",
+      "gold_id": "dup_apartment_1",
+      "cluster": "clu_apartment",
+      "kind": "duplicate_cluster"
+    },
+    {
+      "probe": "What breed of dog did the Alvarez family adopt?",
+      "gold_id": "dup_puppy_1",
+      "cluster": "clu_puppy",
+      "kind": "duplicate_cluster"
+    },
+    {
+      "probe": "Which peak did the climbing club reach in autumn?",
+      "gold_id": "dup_summit_1",
+      "cluster": "clu_summit",
+      "kind": "duplicate_cluster"
+    },
+    {
+      "probe": "What is the title of the novel Hana finished writing?",
+      "gold_id": "dup_novel_1",
+      "cluster": "clu_novel",
+      "kind": "duplicate_cluster"
+    }
+  ]
+}

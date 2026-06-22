@@ -1,0 +1,390 @@
+{
+  "axis": "a3_temporal",
+  "items": [
+    {
+      "attribute": "the city the speaker lives in",
+      "id": "a3_residence_00",
+      "order": 0,
+      "source": "sess_residence_00",
+      "text": "I lived in Boston.",
+      "topic": "residence",
+      "valid_from": "2018-03-01"
+    },
+    {
+      "attribute": "the city the speaker lives in",
+      "id": "a3_residence_01",
+      "order": 1,
+      "source": "sess_residence_01",
+      "text": "I moved to Chicago.",
+      "topic": "residence",
+      "valid_from": "2020-07-15"
+    },
+    {
+      "attribute": "the city the speaker lives in",
+      "id": "a3_residence_02",
+      "order": 2,
+      "source": "sess_residence_02",
+      "text": "I relocated to Denver.",
+      "topic": "residence",
+      "valid_from": "2022-02-10"
+    },
+    {
+      "attribute": "the city the speaker lives in",
+      "id": "a3_residence_03",
+      "order": 3,
+      "source": "sess_residence_03",
+      "text": "I settled in Seattle.",
+      "topic": "residence",
+      "valid_from": "2024-09-05"
+    },
+    {
+      "attribute": "the phone the speaker carries",
+      "id": "a3_phone_00",
+      "order": 0,
+      "source": "sess_phone_00",
+      "text": "My phone was a Pixel 3.",
+      "topic": "phone",
+      "valid_from": "2019-01-20"
+    },
+    {
+      "attribute": "the phone the speaker carries",
+      "id": "a3_phone_01",
+      "order": 1,
+      "source": "sess_phone_01",
+      "text": "My phone became a Pixel 6.",
+      "topic": "phone",
+      "valid_from": "2021-11-01"
+    },
+    {
+      "attribute": "the phone the speaker carries",
+      "id": "a3_phone_02",
+      "order": 2,
+      "source": "sess_phone_02",
+      "text": "My phone is now a Pixel 8.",
+      "topic": "phone",
+      "valid_from": "2023-10-12"
+    },
+    {
+      "attribute": "the job title the speaker holds",
+      "id": "a3_job_title_00",
+      "order": 0,
+      "source": "sess_job_title_00",
+      "text": "I worked as a junior analyst.",
+      "topic": "job_title",
+      "valid_from": "2017-06-01"
+    },
+    {
+      "attribute": "the job title the speaker holds",
+      "id": "a3_job_title_01",
+      "order": 1,
+      "source": "sess_job_title_01",
+      "text": "I was promoted to senior analyst.",
+      "topic": "job_title",
+      "valid_from": "2019-09-15"
+    },
+    {
+      "attribute": "the job title the speaker holds",
+      "id": "a3_job_title_02",
+      "order": 2,
+      "source": "sess_job_title_02",
+      "text": "I became a team lead.",
+      "topic": "job_title",
+      "valid_from": "2022-04-01"
+    },
+    {
+      "attribute": "the job title the speaker holds",
+      "id": "a3_job_title_03",
+      "order": 3,
+      "source": "sess_job_title_03",
+      "text": "I took a role as engineering manager.",
+      "topic": "job_title",
+      "valid_from": "2025-01-10"
+    },
+    {
+      "attribute": "the car the speaker drives",
+      "id": "a3_car_00",
+      "order": 0,
+      "source": "sess_car_00",
+      "text": "I drove a red Honda Civic.",
+      "topic": "car",
+      "valid_from": "2016-05-10"
+    },
+    {
+      "attribute": "the car the speaker drives",
+      "id": "a3_car_01",
+      "order": 1,
+      "source": "sess_car_01",
+      "text": "I switched to a silver Subaru Outback.",
+      "topic": "car",
+      "valid_from": "2020-12-01"
+    },
+    {
+      "attribute": "the car the speaker drives",
+      "id": "a3_car_02",
+      "order": 2,
+      "source": "sess_car_02",
+      "text": "I now drive a blue Toyota RAV4.",
+      "topic": "car",
+      "valid_from": "2024-03-22"
+    },
+    {
+      "attribute": "the pet the speaker keeps",
+      "id": "a3_pet_00",
+      "order": 0,
+      "source": "sess_pet_00",
+      "text": "I had a tabby cat named Pixel.",
+      "topic": "pet",
+      "valid_from": "2018-08-08"
+    },
+    {
+      "attribute": "the pet the speaker keeps",
+      "id": "a3_pet_01",
+      "order": 1,
+      "source": "sess_pet_01",
+      "text": "I adopted a beagle named Comet.",
+      "topic": "pet",
+      "valid_from": "2021-03-30"
+    },
+    {
+      "attribute": "the pet the speaker keeps",
+      "id": "a3_pet_02",
+      "order": 2,
+      "source": "sess_pet_02",
+      "text": "I got a parrot named Mango.",
+      "topic": "pet",
+      "valid_from": "2023-07-19"
+    },
+    {
+      "attribute": "the diet the speaker follows",
+      "id": "a3_diet_00",
+      "order": 0,
+      "source": "sess_diet_00",
+      "text": "I followed a vegetarian diet.",
+      "topic": "diet",
+      "valid_from": "2019-02-01"
+    },
+    {
+      "attribute": "the diet the speaker follows",
+      "id": "a3_diet_01",
+      "order": 1,
+      "source": "sess_diet_01",
+      "text": "I switched to a pescatarian diet.",
+      "topic": "diet",
+      "valid_from": "2021-06-15"
+    },
+    {
+      "attribute": "the diet the speaker follows",
+      "id": "a3_diet_02",
+      "order": 2,
+      "source": "sess_diet_02",
+      "text": "I went fully vegan.",
+      "topic": "diet",
+      "valid_from": "2024-01-05"
+    }
+  ],
+  "n_items": 20,
+  "n_queries": 20,
+  "n_topics": 6,
+  "queries": [
+    {
+      "gold": "a3_residence_03",
+      "id": "a3q_residence_most_recent",
+      "kind": "most_recent",
+      "open_ended_phrasings": [
+        "Right now, what is the city the speaker lives in?",
+        "What is the speaker's current city?"
+      ],
+      "rationale": "The latest fact in the residence chain is a3_residence_03 (valid_from 2024-09-05); 'most recent' = max valid_from.",
+      "text": "What is the most recent city for the city the speaker lives in?",
+      "topic": "residence"
+    },
+    {
+      "as_of": "2019-05-08",
+      "gold": "a3_residence_00",
+      "id": "a3q_residence_as_of_00",
+      "kind": "as_of",
+      "rationale": "At 2019-05-08 the in-force fact is a3_residence_00 (valid_from 2018-03-01); the next update a3_residence_01 (valid_from 2020-07-15) is after 2019-05-08, so it was not yet true.",
+      "text": "As of 2019-05-08, what was the city the speaker lives in?",
+      "topic": "residence"
+    },
+    {
+      "as_of": "2021-04-28",
+      "gold": "a3_residence_01",
+      "id": "a3q_residence_as_of_01",
+      "kind": "as_of",
+      "rationale": "At 2021-04-28 the in-force fact is a3_residence_01 (valid_from 2020-07-15); the next update a3_residence_02 (valid_from 2022-02-10) is after 2021-04-28, so it was not yet true.",
+      "text": "As of 2021-04-28, what was the city the speaker lives in?",
+      "topic": "residence"
+    },
+    {
+      "as_of": "2023-05-25",
+      "gold": "a3_residence_02",
+      "id": "a3q_residence_as_of_02",
+      "kind": "as_of",
+      "rationale": "At 2023-05-25 the in-force fact is a3_residence_02 (valid_from 2022-02-10); the next update a3_residence_03 (valid_from 2024-09-05) is after 2023-05-25, so it was not yet true.",
+      "text": "As of 2023-05-25, what was the city the speaker lives in?",
+      "topic": "residence"
+    },
+    {
+      "gold": "a3_phone_02",
+      "id": "a3q_phone_most_recent",
+      "kind": "most_recent",
+      "open_ended_phrasings": [
+        "Right now, what is the phone the speaker carries?",
+        "What is the speaker's current phone?"
+      ],
+      "rationale": "The latest fact in the phone chain is a3_phone_02 (valid_from 2023-10-12); 'most recent' = max valid_from.",
+      "text": "What is the most recent phone for the phone the speaker carries?",
+      "topic": "phone"
+    },
+    {
+      "as_of": "2020-06-11",
+      "gold": "a3_phone_00",
+      "id": "a3q_phone_as_of_00",
+      "kind": "as_of",
+      "rationale": "At 2020-06-11 the in-force fact is a3_phone_00 (valid_from 2019-01-20); the next update a3_phone_01 (valid_from 2021-11-01) is after 2020-06-11, so it was not yet true.",
+      "text": "As of 2020-06-11, what was the phone the speaker carries?",
+      "topic": "phone"
+    },
+    {
+      "as_of": "2022-10-22",
+      "gold": "a3_phone_01",
+      "id": "a3q_phone_as_of_01",
+      "kind": "as_of",
+      "rationale": "At 2022-10-22 the in-force fact is a3_phone_01 (valid_from 2021-11-01); the next update a3_phone_02 (valid_from 2023-10-12) is after 2022-10-22, so it was not yet true.",
+      "text": "As of 2022-10-22, what was the phone the speaker carries?",
+      "topic": "phone"
+    },
+    {
+      "gold": "a3_job_title_03",
+      "id": "a3q_job_title_most_recent",
+      "kind": "most_recent",
+      "open_ended_phrasings": [
+        "Right now, what is the job title the speaker holds?",
+        "What is the speaker's current job title?"
+      ],
+      "rationale": "The latest fact in the job_title chain is a3_job_title_03 (valid_from 2025-01-10); 'most recent' = max valid_from.",
+      "text": "What is the most recent job title for the job title the speaker holds?",
+      "topic": "job_title"
+    },
+    {
+      "as_of": "2018-07-24",
+      "gold": "a3_job_title_00",
+      "id": "a3q_job_title_as_of_00",
+      "kind": "as_of",
+      "rationale": "At 2018-07-24 the in-force fact is a3_job_title_00 (valid_from 2017-06-01); the next update a3_job_title_01 (valid_from 2019-09-15) is after 2018-07-24, so it was not yet true.",
+      "text": "As of 2018-07-24, what was the job title the speaker holds?",
+      "topic": "job_title"
+    },
+    {
+      "as_of": "2020-12-22",
+      "gold": "a3_job_title_01",
+      "id": "a3q_job_title_as_of_01",
+      "kind": "as_of",
+      "rationale": "At 2020-12-22 the in-force fact is a3_job_title_01 (valid_from 2019-09-15); the next update a3_job_title_02 (valid_from 2022-04-01) is after 2020-12-22, so it was not yet true.",
+      "text": "As of 2020-12-22, what was the job title the speaker holds?",
+      "topic": "job_title"
+    },
+    {
+      "as_of": "2023-08-21",
+      "gold": "a3_job_title_02",
+      "id": "a3q_job_title_as_of_02",
+      "kind": "as_of",
+      "rationale": "At 2023-08-21 the in-force fact is a3_job_title_02 (valid_from 2022-04-01); the next update a3_job_title_03 (valid_from 2025-01-10) is after 2023-08-21, so it was not yet true.",
+      "text": "As of 2023-08-21, what was the job title the speaker holds?",
+      "topic": "job_title"
+    },
+    {
+      "gold": "a3_car_02",
+      "id": "a3q_car_most_recent",
+      "kind": "most_recent",
+      "open_ended_phrasings": [
+        "Right now, what is the car the speaker drives?",
+        "What is the speaker's current car?"
+      ],
+      "rationale": "The latest fact in the car chain is a3_car_02 (valid_from 2024-03-22); 'most recent' = max valid_from.",
+      "text": "What is the most recent car for the car the speaker drives?",
+      "topic": "car"
+    },
+    {
+      "as_of": "2018-08-21",
+      "gold": "a3_car_00",
+      "id": "a3q_car_as_of_00",
+      "kind": "as_of",
+      "rationale": "At 2018-08-21 the in-force fact is a3_car_00 (valid_from 2016-05-10); the next update a3_car_01 (valid_from 2020-12-01) is after 2018-08-21, so it was not yet true.",
+      "text": "As of 2018-08-21, what was the car the speaker drives?",
+      "topic": "car"
+    },
+    {
+      "as_of": "2022-07-27",
+      "gold": "a3_car_01",
+      "id": "a3q_car_as_of_01",
+      "kind": "as_of",
+      "rationale": "At 2022-07-27 the in-force fact is a3_car_01 (valid_from 2020-12-01); the next update a3_car_02 (valid_from 2024-03-22) is after 2022-07-27, so it was not yet true.",
+      "text": "As of 2022-07-27, what was the car the speaker drives?",
+      "topic": "car"
+    },
+    {
+      "gold": "a3_pet_02",
+      "id": "a3q_pet_most_recent",
+      "kind": "most_recent",
+      "open_ended_phrasings": [
+        "Right now, what is the pet the speaker keeps?",
+        "What is the speaker's current pet?"
+      ],
+      "rationale": "The latest fact in the pet chain is a3_pet_02 (valid_from 2023-07-19); 'most recent' = max valid_from.",
+      "text": "What is the most recent pet for the pet the speaker keeps?",
+      "topic": "pet"
+    },
+    {
+      "as_of": "2019-12-03",
+      "gold": "a3_pet_00",
+      "id": "a3q_pet_as_of_00",
+      "kind": "as_of",
+      "rationale": "At 2019-12-03 the in-force fact is a3_pet_00 (valid_from 2018-08-08); the next update a3_pet_01 (valid_from 2021-03-30) is after 2019-12-03, so it was not yet true.",
+      "text": "As of 2019-12-03, what was the pet the speaker keeps?",
+      "topic": "pet"
+    },
+    {
+      "as_of": "2022-05-24",
+      "gold": "a3_pet_01",
+      "id": "a3q_pet_as_of_01",
+      "kind": "as_of",
+      "rationale": "At 2022-05-24 the in-force fact is a3_pet_01 (valid_from 2021-03-30); the next update a3_pet_02 (valid_from 2023-07-19) is after 2022-05-24, so it was not yet true.",
+      "text": "As of 2022-05-24, what was the pet the speaker keeps?",
+      "topic": "pet"
+    },
+    {
+      "gold": "a3_diet_02",
+      "id": "a3q_diet_most_recent",
+      "kind": "most_recent",
+      "open_ended_phrasings": [
+        "Right now, what is the diet the speaker follows?",
+        "What is the speaker's current diet?"
+      ],
+      "rationale": "The latest fact in the diet chain is a3_diet_02 (valid_from 2024-01-05); 'most recent' = max valid_from.",
+      "text": "What is the most recent diet for the diet the speaker follows?",
+      "topic": "diet"
+    },
+    {
+      "as_of": "2020-04-08",
+      "gold": "a3_diet_00",
+      "id": "a3q_diet_as_of_00",
+      "kind": "as_of",
+      "rationale": "At 2020-04-08 the in-force fact is a3_diet_00 (valid_from 2019-02-01); the next update a3_diet_01 (valid_from 2021-06-15) is after 2020-04-08, so it was not yet true.",
+      "text": "As of 2020-04-08, what was the diet the speaker follows?",
+      "topic": "diet"
+    },
+    {
+      "as_of": "2022-09-25",
+      "gold": "a3_diet_01",
+      "id": "a3q_diet_as_of_01",
+      "kind": "as_of",
+      "rationale": "At 2022-09-25 the in-force fact is a3_diet_01 (valid_from 2021-06-15); the next update a3_diet_02 (valid_from 2024-01-05) is after 2022-09-25, so it was not yet true.",
+      "text": "As of 2022-09-25, what was the diet the speaker follows?",
+      "topic": "diet"
+    }
+  ],
+  "seed": 1337,
+  "version": 1
+}

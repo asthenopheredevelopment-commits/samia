@@ -1,0 +1,64 @@
+# SAM/IA capability benchmark — pinned seeds + environment (one-command reproduction).
+#
+# Per BENCHMARK_DESIGN_v1.md non-negotiable #2 ("pinned deps, fixed RNG seeds, fixed embedder
+# + judge model by digest; same inputs -> same score"). Everything that determines a number is
+# pinned here so a third party reproduces the published scores.json exactly. The ONLY values
+# that legitimately vary by machine are the A9 wall-clock latencies (the nature of a latency
+# benchmark); every programmatic metric and every gold-id outcome is byte-reproducible.
+
+[run]
+# The single run seed. Recorded in the scores.json manifest and passed to the axes that draw
+# on RNG (A9's probe-sample selection). The fixed-dataset axes do not draw on it; their
+# determinism comes from the checksummed dataset + the pinned embedder.
+seed = 1337
+
+# A9 store sizes (the design's 10^2 / 10^3 / 10^4 sweep).
+sizes = [100, 1000, 10000]
+
+# All nine capability axes, in design order A1..A9.
+axes = [
+  "a1_retrieval", "a2_retention", "a3_temporal", "a4_contradiction",
+  "a5_consolidation", "a6_associative", "a7_distill", "a8_provenance", "a9_latency",
+]
+
+[embedder]
+# The fixed semantic embedder. Pinned by name; the benchmark runs it CACHE-ONLY
+# (autofetch off) so a cache-miss fails loudly rather than reaching the network at score time.
+model = "sentence-transformers/all-MiniLM-L6-v2"
+dim = 384
+device = "cpu"
+autofetch = false              # ASTHENOS_MODEL_AUTOFETCH=0 — no network at score time
+
+[judge]
+# The single pinned local judge, used ONLY for the open-ended subset (A3 / A4-N/A / A7), at
+# temperature 0 with a fixed seed, every transcript saved. It is a LOCAL model (no internet);
+# if the local daemon is not running the subset is reported "pending" (never fabricated) and
+# the programmatic metrics stand alone, so a judge-less reproduction still matches on every
+# programmatic number.
+model = "phi4-mini:latest"
+temperature = 0.0
+seed = 1337
+required = false               # programmatic metrics do not depend on the judge being up
+
+[dataset]
+# The datasets are committed + checksummed; the harness verifies each axis's SHA256 before it
+# runs and refuses a drifted corpus. The authoritative manifest of every dataset payload is:
+checksums = "../data/SHA256SUMS"
+
+[pins]
+# The dependency versions the published scores.json was produced under (informational; the
+# Dockerfile installs these exact pins). Programmatic metrics are stable across patch versions
+# of these libraries; they are pinned so a byte-exact reproduction is possible.
+python = "3.12"
+numpy = "2.5.0"
+"sentence-transformers" = "5.6.0"
+torch = "2.12.1"
+transformers = "5.12.1"
+samia = "1.0.0"
+
+[determinism]
+# How to verify determinism: run the benchmark twice and assert the scoring subtree
+# (everything except the A9 wall-clock latencies, which vary by machine) is byte-identical.
+command = "python ../run_benchmark.py --seed 1337 --sizes 100,1000,10000 --check-determinism"
+varies_by_machine = ["a9_latency.recall_p50_ms", "a9_latency.recall_p95_ms",
+                     "a9_latency.ingest_items_per_s", "wall_seconds"]
