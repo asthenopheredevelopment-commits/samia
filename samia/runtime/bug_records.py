@@ -382,7 +382,7 @@ def update_bug_status(slug: str, new_status: str) -> bool:
                 )
                 # What: Resolve to the SAM memory root via the shared resolver.
                 # Why: Path(__file__).parent*4 resolves to the staging/drive root in
-                #      the staged/site-packages layout (verified: /mnt/slot01), not the
+                #      the staged/site-packages layout, not the
                 #      memory root — emit_samia would mkdir + write the outcome node
                 #      where no consumer scans. resolve_memory_root (env→verified-legacy
                 #      →XDG) is layout-safe and matches NODES_DIR.
